@@ -31,7 +31,7 @@ class Consumable(DatabaseEntity):
                 minor_parts : int = 0, \
                 completions : int = 0, \
                 rating : Union[float, None] = None, \
-                start_date : float = None, \
+                start_date : Union[float, None] = None, \
                 end_date : Union[float, None] = None, \
                 staff : list[Staff] = None) -> None:
         super().__init__(self.DB_NAME, id)
@@ -40,11 +40,11 @@ class Consumable(DatabaseEntity):
         self.status = status if isinstance(status, Status) else Status(status)
         self.major_parts = major_parts
         self.minor_parts = minor_parts
-        self.completions = completions
+        self.completions = completions if not (completions == 0 and self.status == Status.COMPLETED) else 1
         self.rating = rating
         self.staff = [] if staff is None else staff
         # Using posix-timestamp
-        self.start_date = start_date if start_date else datetime.utcnow().timestamp()
+        self.start_date = start_date if start_date else datetime.utcnow().timestamp() if self.status == Status.IN_PROGRESS else start_date
         self.end_date = end_date
         if self.id is not None:
             self.populate_staff()
@@ -71,6 +71,8 @@ class Consumable(DatabaseEntity):
 
     @classmethod
     def find(cls, **kwargs) -> list[Consumable]:
+        if "status" in kwargs and isinstance(kwargs["status"], Status):
+            kwargs["status"] = kwargs["status"].value
         consumables = cls.db_handler.find_many(cls.DB_NAME, **kwargs)
         return [Consumable(*data) for data in consumables]
 
