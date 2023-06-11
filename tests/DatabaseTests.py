@@ -1,4 +1,4 @@
-from consumption.consumption_backend.Database import SQLiteDatabaseHandler
+from consumptionbackend.Database import SQLiteDatabaseHandler
 import unittest
 import sqlite3
 

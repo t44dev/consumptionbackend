@@ -12,16 +12,14 @@ description = "The backend SQLite3 database manager for the ConsumptionCLI tool.
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 3 - Beta",
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
     "Programming Language :: SQL",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
-dependencies = [
-  "tabulate>=0.9.0"
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/track-44/consumptionbackend"

@@ -1,5 +1,5 @@
-from consumption.consumption_backend.Consumable import Consumable
-from consumption.consumption_backend.Database import SQLiteDatabaseHandler, SQLiteTableInstantiator
+from consumptionbackend.Consumable import Consumable
+from consumptionbackend.Database import SQLiteDatabaseHandler, SQLiteTableInstantiator
 import sqlite3
 import unittest
 
