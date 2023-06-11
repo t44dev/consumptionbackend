@@ -10,6 +10,7 @@ authors = [
 ]
 description = "The backend SQLite3 database manager for the ConsumptionCLI tool."
 readme = "README.md"
+license-files = { paths = ["LICENSE"] }
 requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
