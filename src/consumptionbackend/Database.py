@@ -198,7 +198,7 @@ class SQLiteTableInstantiator():
             minor_parts INTEGER NOT NULL DEFAULT 0,
             completions INTEGER NOT NULL DEFAULT 0,
             rating REAL,
-            start_date REAL NOT NULL,
+            start_date REAL,
             end_date REAL)"""
         sql_staff_mapping = """CREATE TABLE IF NOT EXISTS consumable_staff(
                             staff_id INTEGER NOT NULL,
