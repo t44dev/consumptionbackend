@@ -60,12 +60,12 @@ class Consumable(DatabaseEntity):
         # Change to in progress if a start_date is set
         if self.start_date is None and self.status == Status.IN_PROGRESS:
             self.start_date = datetime.utcnow().timestamp()     # Posix-timestamp
-        # Resettable start_date on return to PLANNING
-        if self.start_date and self.status == Status.PLANNING:
-            self.start_date = None
+        # Minor >= Major
+        if self.minor_parts < self.major_parts:
+            self.minor_parts = self.major_parts
         ## Errors
-        if self.start_date > self.end_date:
-            raise ValueError("End date must be after start date")
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValueError("End date must be after start date.")
         
     def populate_staff(self, **kwargs) -> None:
         mappings = self.db_handler.find_many(self.DB_STAFF_MAPPING_NAME, **kwargs)
