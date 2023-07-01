@@ -26,7 +26,7 @@ class Consumable(DatabaseEntity):
                 id : Union[int, None] = None, \
                 name : str = "", \
                 type : str = "", \
-                status : Union[Status, int] = Status.IN_PROGRESS, \
+                status : Union[Status, int] = Status.PLANNING, \
                 major_parts : int = 0, \
                 minor_parts : int = 0, \
                 completions : int = 0, \
@@ -37,18 +37,36 @@ class Consumable(DatabaseEntity):
         super().__init__(self.DB_NAME, id)
         self.name = name
         self.type = type
-        self.status = status if isinstance(status, Status) else Status(status)
+        self.status = status
         self.major_parts = major_parts
         self.minor_parts = minor_parts
-        self.completions = completions if not (completions == 0 and self.status == Status.COMPLETED) else 1
+        self.completions = completions
         self.rating = rating
         self.staff = [] if staff is None else staff
-        # Using posix-timestamp
-        self.start_date = start_date if start_date else datetime.utcnow().timestamp() if self.status == Status.IN_PROGRESS else start_date
+        self.start_date = start_date
         self.end_date = end_date
         if self.id is not None:
             self.populate_staff()
-    
+        self._validate_constraints()
+
+    def _validate_constraints(self) -> None:
+        ## Conversions
+        # Convert status to Enum
+        if not isinstance(self.status, Status):
+            self.status = Status(self.status)
+        # Set completions if completed
+        if self.completions == 0 and self.status == Status.COMPLETED:
+            self.completions = 1
+        # Change to in progress if a start_date is set
+        if self.start_date is None and self.status == Status.IN_PROGRESS:
+            self.start_date = datetime.utcnow().timestamp()     # Posix-timestamp
+        # Resettable start_date on return to PLANNING
+        if self.start_date and self.status == Status.PLANNING:
+            self.start_date = None
+        ## Errors
+        if self.start_date > self.end_date:
+            raise ValueError("End date must be after start date")
+        
     def populate_staff(self, **kwargs) -> None:
         mappings = self.db_handler.find_many(self.DB_STAFF_MAPPING_NAME, **kwargs)
         for staff_id, _, role in mappings:
