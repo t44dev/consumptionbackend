@@ -104,6 +104,7 @@ class Consumable(DatabaseEntity):
         super().delete(cls.DB_NAME, id)
 
     def save(self, **kwargs) -> int:
+        self._validate_constraints()
         return super().save(name=self.name, \
                             type=self.type, \
                             status=self.status.value, \
