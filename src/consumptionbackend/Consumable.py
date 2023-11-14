@@ -63,6 +63,9 @@ class Consumable(DatabaseEntity):
         # Minor >= Major
         if self.minor_parts < self.major_parts:
             self.minor_parts = self.major_parts
+        # Major == 1 on COMPLETE
+        if self.major_parts == 0 and self.status == Status.COMPLETED:
+            self.major_parts = 1
         ## Errors
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValueError("End date must be after start date.")
