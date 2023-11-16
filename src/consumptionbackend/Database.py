@@ -122,18 +122,4 @@ class DatabaseInstantiator():
             id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
             name TEXT
         )"""
-        sql_consumable_mapping = """CREATE TABLE IF NOT EXISTS series_consumable(
-                            series_id INTEGER NOT NULL,
-                            consumable_id INTEGER NOT NULL,
-                            PRIMARY KEY (series_id, consumable_id)
-                            FOREIGN KEY (series_id)
-                                REFERENCES series (id)
-                                ON DELETE CASCADE
-                                ON UPDATE NO ACTION
-                            FOREIGN KEY (consumable_id)
-                                REFERENCES consumables (id)
-                                ON DELETE CASCADE
-                                ON UPDATE NO ACTION
-                            )"""
         DatabaseHandler.get_db().cursor().execute(sql)
-        DatabaseHandler.get_db().cursor().execute(sql_consumable_mapping)
