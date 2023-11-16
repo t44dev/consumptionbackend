@@ -12,38 +12,6 @@ from collections.abc import Sequence, Mapping
 from .path_handling import CONFIG_PATH
 
 
-class DatabaseEntity(ABC):
-
-    def __init__(self, *args, id: Union[int, None] = None) -> None:
-        super().__init__()
-        # None if not presently in the database, else the internal db id.
-        self.id = id
-        self._db = DatabaseHandler.get_db()
-
-    @classmethod
-    @abstractmethod
-    def new(cls, **kwargs) -> DatabaseEntity:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def find(cls, **kwargs) -> Sequence[DatabaseEntity]:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def update(cls, where : Mapping[str, Any], set : Mapping[str, Any]) -> Sequence[DatabaseEntity]:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def delete(cls, **kwargs) -> bool:
-        pass
-
-    def __eq__(self, other: DatabaseEntity) -> bool:
-        return self.id == other.id
-
-
 class DatabaseHandler():
 
     DB_CONNECTION: sqlite3.Connection = None
@@ -61,6 +29,39 @@ class DatabaseHandler():
         return cls.DB_CONNECTION
 
 
+class DatabaseEntity(ABC):
+
+    db: sqlite3.Connection = DatabaseHandler.get_db()
+
+    def __init__(self, *args, id: Union[int, None] = None) -> None:
+        super().__init__()
+        # None if not presently in the database, else the internal db id.
+        self.id = id
+
+    @classmethod
+    @abstractmethod
+    def new(cls, **kwargs) -> DatabaseEntity:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def find(cls, **kwargs) -> Sequence[DatabaseEntity]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def update(cls, where: Mapping[str, Any], set: Mapping[str, Any]) -> Sequence[DatabaseEntity]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def delete(cls, **kwargs) -> bool:
+        pass
+
+    def __eq__(self, other: DatabaseEntity) -> bool:
+        return self.id == other.id
+
+
 class DatabaseInstantiator():
 
     def __init__(self) -> None:
@@ -75,7 +76,7 @@ class DatabaseInstantiator():
     def consumable_table(cls):
         sql = """CREATE TABLE IF NOT EXISTS consumables(
             id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
-            series_id INTEGER NOT NULL,
+            series_id INTEGER NOT NULL DEFAULT -1,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
             status INTEGER NOT NULL DEFAULT 0,
