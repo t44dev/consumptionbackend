@@ -3,11 +3,12 @@ from pathlib import Path
 import json
 
 DEFAULT_CONFIG = {
-    "DB_PATH" : "~/.consumption/consumption.db"
+    "DB_PATH": "~/.consumption/consumption.db"
 }
 
 CONSUMPTION_PATH = Path.home() / ".consumption"
 CONFIG_PATH = CONSUMPTION_PATH / "config.json"
+
 
 def setup_config():
     if not CONFIG_PATH.is_file():
