@@ -50,7 +50,7 @@ class DatabaseEntity(ABC):
 
     @classmethod
     @abstractmethod
-    def update(cls, where: Mapping[str, Any], set: Mapping[str, Any]) -> Sequence[DatabaseEntity]:
+    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[DatabaseEntity]:
         pass
 
     @classmethod

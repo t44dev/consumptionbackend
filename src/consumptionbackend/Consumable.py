@@ -140,7 +140,7 @@ class Consumable(DatabaseEntity):
         return consumable
 
     @classmethod
-    def find(cls, **kwargs) -> Sequence[DatabaseEntity]:
+    def find(cls, **kwargs) -> Sequence[Consumable]:
         cls._assert_attrs(kwargs)
         cur = cls.db.cursor()
         where = []
@@ -168,7 +168,9 @@ class Consumable(DatabaseEntity):
         return consumables
 
     @classmethod
-    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[DatabaseEntity]:
+    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Consumable]:
+        cls._assert_attrs(where_map)
+        cls._assert_attrs(set_map)
         cur = cls.db.cursor()
         values = []
 
@@ -210,6 +212,7 @@ class Consumable(DatabaseEntity):
 
     @classmethod
     def delete(cls, **kwargs) -> bool:
+        cls._assert_attrs(kwargs)
         cur = cls.db.cursor()
         where = []
         values = []
@@ -236,7 +239,9 @@ class Consumable(DatabaseEntity):
         if self.id is None:
             raise ValueError(
                 "Cannot update Consumable that does not have an ID.")
-        return self.update({"id": self.id}, set_map)[0]
+        update = self.update({"id" : self.id}, set_map)
+        assert len(update) == 1
+        return update[0]
 
     def delete_self(self) -> bool:
         if self.id is None:
