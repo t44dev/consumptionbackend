@@ -69,6 +69,7 @@ class DatabaseInstantiator():
 
     @classmethod
     def run(cls):
+        cls.series_table()
         cls.personnel_table()
         cls.consumable_table()
 

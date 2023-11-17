@@ -87,10 +87,24 @@ class Consumable(DatabaseEntity):
         return Series.find(id=self.series_id)[0]
 
     def add_personnel(self, personnel: Personnel) -> bool:
-        pass
+        if self.id is None: raise ValueError("Cannot assign Personnel to Consumable without ID.")
+        if personnel.id is None: raise ValueError("Cannot assign a Personnel to Consumable without an ID.")
+        if not personnel.role: raise ValueError("Cannot assign Personnel to Consumable without assigned role.")
+        cur = self.db.cursor()
+        sql = f"INSERT INTO {self.DB_PERSONNEL_MAPPING_NAME} (personnel_id, consumable_id, role) VALUES (?,?,?)"
+        cur.execute(sql, [personnel.id, self.id, personnel.role])
+        self.db.commit()
+        return True
 
     def remove_personnel(self, personnel: Personnel) -> bool:
-        pass
+        if self.id is None: raise ValueError("Cannot remove Personnel from Consumable without ID.")
+        if personnel.id is None: raise ValueError("Cannot remove a Personnel from Consumable without an ID.")
+        if not personnel.role: raise ValueError("Cannot remove Personnel from Consumable without assigned role.")
+        cur = self.db.cursor()
+        sql = f"DELETE FROM {self.DB_PERSONNEL_MAPPING_NAME} WHERE personnel_id = ?, consumable_id = ?, role = ?"
+        cur.execute(sql, [personnel.id, self.id, personnel.role])
+        self.db.commit()
+        return True
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
