@@ -25,7 +25,7 @@ class Series(DatabaseEntity):
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
-        attrs = {"id", "name", }
+        attrs = {"id", "name"}
         for key in d.keys():
             if key not in attrs:
                 raise ValueError(
@@ -51,7 +51,7 @@ class Series(DatabaseEntity):
         return series
 
     @classmethod
-    def find(cls, **kwargs) -> Sequence[DatabaseEntity]:
+    def find(cls, **kwargs) -> Sequence[Series]:
         cls._assert_attrs(kwargs)
         cur = cls.db.cursor()
         where = []
@@ -121,7 +121,7 @@ class Series(DatabaseEntity):
         cls.db.commit()
         return True
 
-    def update_self(self, set_map: Mapping[str, Any]) -> Consumable:
+    def update_self(self, set_map: Mapping[str, Any]) -> Series:
         if self.id is None:
             raise ValueError(
                 "Cannot update Series that does not have an ID.")

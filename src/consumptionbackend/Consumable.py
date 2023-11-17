@@ -1,5 +1,5 @@
 # General Imports
-from __future__ import annotations  # For self-referential type-hints
+from __future__ import annotations
 from typing import Union, Any
 from datetime import datetime
 from enum import Enum
@@ -80,11 +80,17 @@ class Consumable(DatabaseEntity):
         personnel = []
         for row in rows:
             personnel.append(
-                Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6]))
+                Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6], role=row[2]))
         return personnel
 
     def get_series(self) -> Series:
         return Series.find(id=self.series_id)[0]
+
+    def add_personnel(self, personnel: Personnel) -> bool:
+        pass
+
+    def remove_personnel(self, personnel: Personnel) -> bool:
+        pass
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
@@ -239,7 +245,7 @@ class Consumable(DatabaseEntity):
         if self.id is None:
             raise ValueError(
                 "Cannot update Consumable that does not have an ID.")
-        update = self.update({"id" : self.id}, set_map)
+        update = self.update({"id": self.id}, set_map)
         assert len(update) == 1
         return update[0]
 
