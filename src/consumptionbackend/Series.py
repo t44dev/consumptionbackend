@@ -5,8 +5,7 @@ from typing import Union, Any
 
 # Package Imports
 from .Database import DatabaseEntity
-from .Consumable import Consumable
-
+from . import Consumable as cons
 
 class Series(DatabaseEntity):
 
@@ -18,10 +17,10 @@ class Series(DatabaseEntity):
         super().__init__(*args, id=id)
         self.name = name
 
-    def get_consumables(self) -> Sequence[Consumable]:
+    def get_consumables(self) -> Sequence[cons.Consumable]:
         if self.id is None:
             raise ValueError("Cannot find Consumables for Series without ID.")
-        return Consumable.find({"series_id": self.id})
+        return cons.Consumable.find({"series_id": self.id})
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
@@ -38,7 +37,7 @@ class Series(DatabaseEntity):
     @classmethod
     def new(cls, **kwargs) -> Series:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         series = Series(**kwargs)
 
         sql = f"""INSERT INTO {cls.DB_NAME} 
@@ -46,14 +45,14 @@ class Series(DatabaseEntity):
                 VALUES (?,?)
             """
         cur.execute(sql, [series.id, series.name])
-        cls.db.commit()
+        cls.handler.get_db().commit()
         series.id = cur.lastrowid
         return series
 
     @classmethod
     def find(cls, **kwargs) -> Sequence[Series]:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -76,7 +75,7 @@ class Series(DatabaseEntity):
     def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Series]:
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         values = []
 
         set_placeholders = []
@@ -96,7 +95,7 @@ class Series(DatabaseEntity):
         sql = f"UPDATE {cls.DB_NAME} SET {', '.join(set_placeholders)} WHERE {' AND '.join(where_placeholders)} RETURNING *"
         cur.execute(sql, values)
         rows = cur.fetchall()
-        cls.db.commit()
+        cls.handler.get_db().commit()
         series = []
         for row in rows:
             series.append(cls._seq_to_series(row))
@@ -105,7 +104,7 @@ class Series(DatabaseEntity):
     @classmethod
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -118,7 +117,7 @@ class Series(DatabaseEntity):
 
         sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
-        cls.db.commit()
+        cls.handler.get_db().commit()
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Series:
@@ -137,3 +136,7 @@ class Series(DatabaseEntity):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
+
+    def __eq__(self, other: Series) -> bool:
+        return super().__eq__(other) \
+            and self.name == other.name

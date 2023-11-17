@@ -5,8 +5,7 @@ from typing import Union, Any
 
 # Package Imports
 from .Database import DatabaseEntity
-from .Consumable import Consumable
-
+from . import Consumable as cons
 
 class Personnel(DatabaseEntity):
 
@@ -18,22 +17,22 @@ class Personnel(DatabaseEntity):
                  last_name: Union[str, None] = None,
                  pseudonym: Union[str, None] = None,
                  role: Union[str, None] = None) -> None:
-        super().__init__(id)
+        super().__init__(*args, id=id)
         self.first_name = first_name
         self.last_name = last_name
         self.pseudonym = pseudonym
         self.role = role
 
-    def get_consumables(self) -> Sequence[Consumable]:
+    def get_consumables(self) -> Sequence[cons.Consumable]:
         if self.id is None:
             raise ValueError(
                 "Cannot find Consumables for Personnel without ID.")
-        cur = self.db.cursor()
-        sql = f"""SELECT * FROM {Consumable.DB_NAME} 
+        cur = self.handler.get_db().cursor()
+        sql = f"""SELECT * FROM {cons.Consumable.DB_NAME} 
                     WHERE consumable_id IN 
                         (
                             SELECT DISTINCT consumable_id 
-                            FROM {Consumable.DB_PERSONNEL_MAPPING_NAME} 
+                            FROM {cons.Consumable.DB_PERSONNEL_MAPPING_NAME} 
                             WHERE personnel_id = ?
                         )
                 """
@@ -41,7 +40,7 @@ class Personnel(DatabaseEntity):
         rows = cur.fetchall()
         consumables = []
         for row in rows:
-            consumables.append(Consumable._seq_to_consumable(row))
+            consumables.append(cons.Consumable._seq_to_consumable(row))
         return consumables
 
     @classmethod
@@ -59,7 +58,7 @@ class Personnel(DatabaseEntity):
     @classmethod
     def new(cls, **kwargs) -> Personnel:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         personnel = Personnel(**kwargs)
 
         sql = f"""INSERT INTO {cls.DB_NAME} 
@@ -68,14 +67,14 @@ class Personnel(DatabaseEntity):
             """
         cur.execute(sql, [personnel.id, personnel.first_name,
                     personnel.last_name, personnel.pseudonym])
-        cls.db.commit()
+        cls.handler.get_db().commit()
         personnel.id = cur.lastrowid
         return personnel
 
     @classmethod
     def find(cls, **kwargs) -> Sequence[Personnel]:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -98,7 +97,7 @@ class Personnel(DatabaseEntity):
     def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Personnel]:
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         values = []
 
         set_placeholders = []
@@ -118,7 +117,7 @@ class Personnel(DatabaseEntity):
         sql = f"UPDATE {cls.DB_NAME} SET {', '.join(set_placeholders)} WHERE {' AND '.join(where_placeholders)} RETURNING *"
         cur.execute(sql, values)
         rows = cur.fetchall()
-        cls.db.commit()
+        cls.handler.get_db().commit()
         personnel = []
         for row in rows:
             personnel.append(cls._seq_to_personnel(row))
@@ -127,7 +126,7 @@ class Personnel(DatabaseEntity):
     @classmethod
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -140,7 +139,7 @@ class Personnel(DatabaseEntity):
 
         sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
-        cls.db.commit()
+        cls.handler.get_db().commit()
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Personnel:
@@ -160,3 +159,9 @@ class Personnel(DatabaseEntity):
     def __str__(self) -> str:
         # TODO: Make this be in the format First "Pseudonym" Last, omitting NoneTypes
         return f"{self.__class__.__name__} | {self.first_name} {self.last_name} with ID: {self.id}"
+
+    def __eq__(self, other: Personnel) -> bool:
+        return super().__eq__(other) \
+            and self.first_name == other.first_name \
+            and self.last_name == other.last_name \
+            and self.pseudonym == other.pseudonym

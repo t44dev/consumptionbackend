@@ -7,9 +7,8 @@ from collections.abc import Sequence, Mapping
 
 # Package Imports
 from .Database import DatabaseEntity
-from .Personnel import Personnel
-from .Series import Series
-
+from . import Personnel as pers
+from . import Series as ser
 
 class Status(Enum):
     PLANNING = 0
@@ -35,7 +34,7 @@ class Consumable(DatabaseEntity):
                  rating: Union[float, None] = None,
                  start_date: Union[float, None] = None,
                  end_date: Union[float, None] = None) -> None:
-        super().__init__(id)
+        super().__init__(*args, id=id)
         self.series_id = series_id
         self.name = name
         self.type = type.upper()
@@ -65,14 +64,14 @@ class Consumable(DatabaseEntity):
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValueError("End date must be after start date.")
 
-    def get_personnel(self) -> Sequence[Personnel]:
+    def get_personnel(self) -> Sequence[pers.Personnel]:
         if self.id is None:
             raise ValueError(
                 "Cannot find Personnel for Consumable without ID.")
-        cur = self.db.cursor()
+        cur = self.handler.get_db().cursor()
         sql = f"""SELECT * FROM {Consumable.DB_PERSONNEL_MAPPING_NAME} 
-                    LEFT JOIN {Personnel.DB_NAME} 
-                    ON {Consumable.DB_PERSONNEL_MAPPING_NAME}.personnel_id = {Personnel.DB_NAME}.id
+                    LEFT JOIN {pers.Personnel.DB_NAME} 
+                    ON {Consumable.DB_PERSONNEL_MAPPING_NAME}.personnel_id = {pers.Personnel.DB_NAME}.id
                     WHERE consumable_id = ?
                 """
         cur.execute(sql, [self.id])
@@ -80,30 +79,42 @@ class Consumable(DatabaseEntity):
         personnel = []
         for row in rows:
             personnel.append(
-                Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6], role=row[2]))
+                pers.Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6], role=row[2]))
         return personnel
 
-    def get_series(self) -> Series:
-        return Series.find(id=self.series_id)[0]
+    def get_series(self) -> ser.Series:
+        return ser.Series.find(id=self.series_id)[0]
 
-    def add_personnel(self, personnel: Personnel) -> bool:
-        if self.id is None: raise ValueError("Cannot assign Personnel to Consumable without ID.")
-        if personnel.id is None: raise ValueError("Cannot assign a Personnel to Consumable without an ID.")
-        if not personnel.role: raise ValueError("Cannot assign Personnel to Consumable without assigned role.")
-        cur = self.db.cursor()
+    def add_personnel(self, personnel: pers.Personnel) -> bool:
+        if self.id is None:
+            raise ValueError(
+                "Cannot assign Personnel to Consumable without ID.")
+        if personnel.id is None:
+            raise ValueError(
+                "Cannot assign a Personnel to Consumable without an ID.")
+        if not personnel.role:
+            raise ValueError(
+                "Cannot assign Personnel to Consumable without assigned role.")
+        cur = self.handler.get_db().cursor()
         sql = f"INSERT INTO {self.DB_PERSONNEL_MAPPING_NAME} (personnel_id, consumable_id, role) VALUES (?,?,?)"
         cur.execute(sql, [personnel.id, self.id, personnel.role])
-        self.db.commit()
+        self.handler.get_db().commit()
         return True
 
-    def remove_personnel(self, personnel: Personnel) -> bool:
-        if self.id is None: raise ValueError("Cannot remove Personnel from Consumable without ID.")
-        if personnel.id is None: raise ValueError("Cannot remove a Personnel from Consumable without an ID.")
-        if not personnel.role: raise ValueError("Cannot remove Personnel from Consumable without assigned role.")
-        cur = self.db.cursor()
+    def remove_personnel(self, personnel: pers.Personnel) -> bool:
+        if self.id is None:
+            raise ValueError(
+                "Cannot remove Personnel from Consumable without ID.")
+        if personnel.id is None:
+            raise ValueError(
+                "Cannot remove a Personnel from Consumable without an ID.")
+        if not personnel.role:
+            raise ValueError(
+                "Cannot remove Personnel from Consumable without assigned role.")
+        cur = self.handler.get_db().cursor()
         sql = f"DELETE FROM {self.DB_PERSONNEL_MAPPING_NAME} WHERE personnel_id = ?, consumable_id = ?, role = ?"
         cur.execute(sql, [personnel.id, self.id, personnel.role])
-        self.db.commit()
+        self.handler.get_db().commit()
         return True
 
     @classmethod
@@ -136,7 +147,7 @@ class Consumable(DatabaseEntity):
             cons.series_id,
             cons.name,
             cons.type,
-            cons.status,
+            cons.status.value,
             cons.parts,
             cons.completions,
             cons.rating,
@@ -147,7 +158,7 @@ class Consumable(DatabaseEntity):
     @classmethod
     def new(cls, **kwargs) -> Consumable:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         consumable = Consumable(**kwargs)
 
         sql = f"""INSERT INTO {cls.DB_NAME} 
@@ -155,14 +166,14 @@ class Consumable(DatabaseEntity):
                 VALUES (?,?,?,?,?,?,?,?,?,?)
             """
         cur.execute(sql, cls._consumable_to_seq(consumable))
-        cls.db.commit()
+        cls.handler.get_db().commit()
         consumable.id = cur.lastrowid
         return consumable
 
     @classmethod
     def find(cls, **kwargs) -> Sequence[Consumable]:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -191,7 +202,7 @@ class Consumable(DatabaseEntity):
     def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Consumable]:
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         values = []
 
         set_placeholders = []
@@ -224,7 +235,7 @@ class Consumable(DatabaseEntity):
         sql = f"UPDATE {cls.DB_NAME} SET {', '.join(set_placeholders)} WHERE {' AND '.join(where_placeholders)} RETURNING *"
         cur.execute(sql, values)
         rows = cur.fetchall()
-        cls.db.commit()
+        cls.handler.get_db().commit()
         consumables = []
         for row in rows:
             consumables.append(cls._seq_to_consumable(row))
@@ -233,7 +244,7 @@ class Consumable(DatabaseEntity):
     @classmethod
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
-        cur = cls.db.cursor()
+        cur = cls.handler.get_db().cursor()
         where = []
         values = []
         for key, value in kwargs.items():
@@ -252,7 +263,7 @@ class Consumable(DatabaseEntity):
 
         sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
-        cls.db.commit()
+        cls.handler.get_db().commit()
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Consumable:
@@ -271,3 +282,15 @@ class Consumable(DatabaseEntity):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
+
+    def __eq__(self, other: Consumable) -> bool:
+        return super().__eq__(other) \
+            and self.series_id == other.series_id \
+            and self.name == other.name \
+            and self.type == other.type \
+            and self.status == other.status \
+            and self.parts == other.parts \
+            and self.completions == other.completions \
+            and self.rating == other.rating \
+            and self.start_date == other.start_date \
+            and self.end_date == other.end_date

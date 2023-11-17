@@ -31,7 +31,7 @@ class DatabaseHandler():
 
 class DatabaseEntity(ABC):
 
-    db: sqlite3.Connection = DatabaseHandler.get_db()
+    handler: DatabaseHandler = DatabaseHandler
 
     def __init__(self, *args, id: Union[int, None] = None) -> None:
         super().__init__()
