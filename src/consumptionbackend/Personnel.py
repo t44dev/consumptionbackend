@@ -75,7 +75,7 @@ class Personnel(DatabaseEntity):
     def find(cls, **kwargs) -> Sequence[Personnel]:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key in ["first_name", "last_name", "pseudoynm"]:
@@ -127,7 +127,7 @@ class Personnel(DatabaseEntity):
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key in ["first_name", "last_name", "pseudoynm"]:

@@ -174,7 +174,7 @@ class Consumable(DatabaseEntity):
     def find(cls, **kwargs) -> Sequence[Consumable]:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key == "name":
@@ -245,7 +245,7 @@ class Consumable(DatabaseEntity):
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key == "name":

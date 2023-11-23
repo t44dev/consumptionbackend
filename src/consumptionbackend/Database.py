@@ -120,8 +120,14 @@ class DatabaseInstantiator():
 
     @classmethod
     def series_table(cls):
+        cur = DatabaseHandler.get_db().cursor()
         sql = """CREATE TABLE IF NOT EXISTS series(
             id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
             name TEXT
         )"""
-        DatabaseHandler.get_db().cursor().execute(sql)
+        cur.execute(sql)
+        # None Series must be in database
+        cur.execute("SELECT * FROM series WHERE id = -1")
+        if len(cur.fetchall()) == 0:
+            cur.execute("INSERT INTO series (id, name) VALUES (-1, 'None')")
+            DatabaseHandler.get_db().commit()

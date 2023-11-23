@@ -53,7 +53,7 @@ class Series(DatabaseEntity):
     def find(cls, **kwargs) -> Sequence[Series]:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key == "name":
@@ -105,7 +105,7 @@ class Series(DatabaseEntity):
     def delete(cls, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
-        where = []
+        where = ["true"]
         values = []
         for key, value in kwargs.items():
             if key == "name":
