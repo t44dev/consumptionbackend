@@ -79,7 +79,7 @@ class Personnel(Database.DatabaseEntity):
         where = ["true"]
         values = []
         for key, value in kwargs.items():
-            if key in ["first_name", "last_name", "pseudoynm"]:
+            if key in ["first_name", "last_name", "pseudonym"]:
                 where.append(f"upper({key}) LIKE upper(?)")
                 values.append(f'%{value}%')
             else:
@@ -110,7 +110,7 @@ class Personnel(Database.DatabaseEntity):
 
         where_placeholders = ["true"]
         for key, value in where_map.items():
-            if key in ["first_name", "last_name", "pseudoynm"]:
+            if key in ["first_name", "last_name", "pseudonym"]:
                 where_placeholders.append(f"upper({key}) LIKE upper(?)")
                 values.append(f'%{value}%')
             else:
@@ -133,7 +133,7 @@ class Personnel(Database.DatabaseEntity):
         where = ["true"]
         values = []
         for key, value in kwargs.items():
-            if key in ["first_name", "last_name", "pseudoynm"]:
+            if key in ["first_name", "last_name", "pseudonym"]:
                 where.append(f"upper({key}) LIKE upper(?)")
                 values.append(f'%{value}%')
             else:

@@ -226,3 +226,18 @@ class DatabaseInstantiator():
         if len(cur.fetchall()) == 0:
             cur.execute("INSERT INTO series (id, name) VALUES (-1, 'None')")
             DatabaseHandler.get_db().commit()
+        cls._series_triggers()
+
+    @classmethod
+    def _series_triggers(cls):
+        cur = DatabaseHandler.get_db().cursor()
+        # Cannot delete ID = -1
+        cur.execute("""
+            CREATE TRIGGER IF NOT EXISTS delete_none_series 
+                BEFORE DELETE ON series 
+                FOR EACH ROW
+                WHEN OLD.id = -1 
+                BEGIN
+                    SELECT RAISE(ROLLBACK, 'cannot delete series with ID -1');
+                END
+        """)
