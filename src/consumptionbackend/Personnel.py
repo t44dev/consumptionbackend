@@ -4,10 +4,11 @@ from collections.abc import Mapping, Sequence
 from typing import Union, Any
 
 # Package Imports
-from .Database import DatabaseEntity
+from . import Database
 from . import Consumable as cons
 
-class Personnel(DatabaseEntity):
+
+class Personnel(Database.DatabaseEntity):
 
     DB_NAME = "personnel"
 
@@ -95,6 +96,8 @@ class Personnel(DatabaseEntity):
 
     @classmethod
     def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Personnel]:
+        if len(set_map) == 0:
+            raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
         cur = cls.handler.get_db().cursor()
@@ -105,7 +108,7 @@ class Personnel(DatabaseEntity):
             set_placeholders.append(f"{key} = ?")
             values.append(value)
 
-        where_placeholders = []
+        where_placeholders = ["true"]
         for key, value in where_map.items():
             if key in ["first_name", "last_name", "pseudoynm"]:
                 where_placeholders.append(f"upper({key}) LIKE upper(?)")

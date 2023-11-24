@@ -10,6 +10,7 @@ from collections.abc import Sequence, Mapping
 
 # Package Imports
 from .path_handling import CONFIG_PATH
+from .Status import Status
 
 
 class DatabaseHandler():
@@ -88,7 +89,7 @@ class DatabaseInstantiator():
             end_date REAL,
             FOREIGN KEY (series_id)
                 REFERENCES series (id)
-                ON DELETE CASCADE
+                ON DELETE SET DEFAULT 
                 ON UPDATE NO ACTION
             )"""
         sql_personnel_mapping = """CREATE TABLE IF NOT EXISTS consumable_personnel(
@@ -107,6 +108,100 @@ class DatabaseInstantiator():
                             )"""
         DatabaseHandler.get_db().cursor().execute(sql)
         DatabaseHandler.get_db().cursor().execute(sql_personnel_mapping)
+        cls._consumable_triggers()
+
+    @classmethod
+    def _consumable_triggers(cls):
+        cur = DatabaseHandler.get_db().cursor()
+        # Set completions if COMPLETED
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS completions_on_completed_update
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.completions = 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET completions = 1 WHERE id = NEW.id;
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS completions_on_completed_insert
+                AFTER INSERT ON consumables 
+                WHEN NEW.completions = 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET completions = 1 WHERE id = NEW.id; 
+                END
+        """)
+        # Set start_date if IN_PROGRESS
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS start_date_on_in_progress_update 
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.start_date IS NULL AND NEW.status = {Status.IN_PROGRESS.value}
+                BEGIN
+                    UPDATE consumables SET start_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS start_date_on_in_progress_insert 
+                AFTER INSERT ON consumables 
+                WHEN NEW.start_date IS NULL AND NEW.status = {Status.IN_PROGRESS.value}
+                BEGIN
+                    UPDATE consumables SET start_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
+                END
+        """)
+        # Set end_date if COMPLETED
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS end_date_on_completed_update 
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.end_date IS NULL AND NEW.status = {Status.COMPLETED.value} 
+                BEGIN
+                    UPDATE consumables SET end_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS end_date_on_completed_insert
+                AFTER INSERT ON consumables 
+                WHEN NEW.end_date IS NULL AND NEW.status = {Status.COMPLETED.value} 
+                BEGIN
+                    UPDATE consumables SET end_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
+                END
+        """)
+        # Parts at least 1 on COMPLETED
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS parts_on_completed_update 
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS parts_on_completed_insert
+                AFTER INSERT ON consumables 
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
+                END
+        """)
+        # Errors
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS date_error_update 
+                AFTER UPDATE ON consumables 
+                WHEN NEW.start_date IS NOT NULL AND NEW.end_date IS NOT NULL AND NEW.start_date > NEW.end_date
+                BEGIN
+                    SELECT RAISE(ROLLBACK, 'end date must be after start date');
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS date_error_insert 
+                AFTER INSERT ON consumables 
+                WHEN NEW.start_date IS NOT NULL AND NEW.end_date IS NOT NULL AND NEW.start_date > NEW.end_date
+                BEGIN
+                    SELECT RAISE(ROLLBACK, 'end date must be after start date');
+                END
+        """)
 
     @classmethod
     def personnel_table(cls):

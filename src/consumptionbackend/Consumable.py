@@ -6,19 +6,13 @@ from enum import Enum
 from collections.abc import Sequence, Mapping
 
 # Package Imports
-from .Database import DatabaseEntity
+from . import Database
 from . import Personnel as pers
 from . import Series as ser
-
-class Status(Enum):
-    PLANNING = 0
-    IN_PROGRESS = 1
-    ON_HOLD = 2
-    DROPPED = 3
-    COMPLETED = 4
+from .Status import Status
 
 
-class Consumable(DatabaseEntity):
+class Consumable(Database.DatabaseEntity):
 
     DB_NAME = "consumables"
     DB_PERSONNEL_MAPPING_NAME = "consumable_personnel"
@@ -38,7 +32,8 @@ class Consumable(DatabaseEntity):
         self.series_id = series_id
         self.name = name
         self.type = type.upper()
-        self.status = status
+        self.status = Status(status) if not isinstance(
+            status, Status) else status
         self.parts = parts
         self.completions = completions
         self.rating = rating
@@ -47,22 +42,21 @@ class Consumable(DatabaseEntity):
         self._enforce_constraints()
 
     def _enforce_constraints(self) -> None:
-        # Conversions
         # Convert status to Enum
         if not isinstance(self.status, Status):
             self.status = Status(self.status)
-        # Set completions if completed
+        # Set completions if COMPLETED
         if self.completions == 0 and self.status == Status.COMPLETED:
             self.completions = 1
-        # Change to in progress if a start_date is set
+        # Set start_date if IN_PROGRESS
         if self.start_date is None and self.status == Status.IN_PROGRESS:
             self.start_date = datetime.utcnow().timestamp()     # Posix-timestamp
-        # Parts at least 1 on COMPLETE
+        # Set end_date if COMPLETED
+        if self.end_date is None and self.status == Status.COMPLETED:
+            self.end_date = datetime.utcnow().timestamp()     # Posix-timestamp
+        # Parts at least 1 if COMPLETED
         if self.parts == 0 and self.status == Status.COMPLETED:
             self.parts = 1
-        # Errors
-        if self.start_date and self.end_date and self.start_date > self.end_date:
-            raise ValueError("End date must be after start date.")
 
     def get_personnel(self) -> Sequence[pers.Personnel]:
         if self.id is None:
@@ -200,6 +194,8 @@ class Consumable(DatabaseEntity):
 
     @classmethod
     def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Consumable]:
+        if len(set_map) == 0:
+            raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
         cur = cls.handler.get_db().cursor()
@@ -217,7 +213,7 @@ class Consumable(DatabaseEntity):
                 set_placeholders.append(f"{key} = ?")
                 values.append(value)
 
-        where_placeholders = []
+        where_placeholders = ["true"]
         for key, value in where_map.items():
             if key == "name":
                 where_placeholders.append(f"upper({key}) LIKE upper(?)")
