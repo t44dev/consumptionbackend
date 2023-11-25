@@ -106,8 +106,18 @@ class DatabaseInstantiator():
                                 ON DELETE CASCADE
                                 ON UPDATE NO ACTION
                             )"""
+        sql_tag_mapping = """CREATE TABLE IF NOT EXISTS consumable_tags(
+                        consumable_id INTEGER NOT NULL,
+                        tag TEXT NOT NULL,
+                        PRIMARY KEY (consumable_id, tag)
+                        FOREIGN KEY (consumable_id)
+                            REFERENCES consumables (id)
+                            ON DELETE CASCADE
+                            ON UPDATE NO ACTION
+                        )"""
         DatabaseHandler.get_db().cursor().execute(sql)
         DatabaseHandler.get_db().cursor().execute(sql_personnel_mapping)
+        DatabaseHandler.get_db().cursor().execute(sql_tag_mapping)
         cls._consumable_triggers()
 
     @classmethod

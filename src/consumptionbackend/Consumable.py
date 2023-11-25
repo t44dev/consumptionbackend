@@ -1,6 +1,6 @@
 # General Imports
 from __future__ import annotations
-from typing import Union, Any
+from typing import Union, Any, Tuple
 from datetime import datetime
 from enum import Enum
 from collections.abc import Sequence, Mapping
@@ -16,6 +16,7 @@ class Consumable(Database.DatabaseEntity):
 
     DB_NAME = "consumables"
     DB_PERSONNEL_MAPPING_NAME = "consumable_personnel"
+    DB_TAG_MAPPING_NAME = "consumable_tags"
 
     def __init__(self, *args,
                  id: Union[int, None] = None,
@@ -79,6 +80,32 @@ class Consumable(Database.DatabaseEntity):
     def get_series(self) -> ser.Series:
         return ser.Series.find(id=self.series_id)[0]
 
+    def get_tags(self) -> Sequence[str]:
+        cur = self.handler.get_db().cursor()
+        sql = f"""SELECT tag FROM {Consumable.DB_TAG_MAPPING_NAME} 
+                WHERE consumable_id = ?"""
+        cur.execute(sql, [self.id])
+        return list(map(lambda x : x[0], cur.fetchall()))
+    
+    def add_tag(self, tag : str) -> bool:
+        tag = tag.strip().lower()
+        if tag in self.get_tags():
+            return False
+        cur = self.handler.get_db().cursor()
+        sql = f"INSERT INTO {Consumable.DB_TAG_MAPPING_NAME} (consumable_id, tag) values (?,?)"
+        cur.execute(sql, [self.id, tag])
+        self.handler.get_db().commit()
+        return True
+    
+    def remove_tag(self, tag : str) -> bool:
+        tag = tag.strip().lower()
+        cur = self.handler.get_db().cursor()
+        sql = f"""DELETE FROM {Consumable.DB_TAG_MAPPING_NAME} 
+                WHERE consumable_id = ? AND tag = ?"""
+        cur.execute(sql, [self.id, tag])
+        self.handler.get_db().commit()
+        return True
+
     def add_personnel(self, personnel: pers.Personnel) -> bool:
         if self.id is None:
             raise ValueError(
@@ -106,15 +133,17 @@ class Consumable(Database.DatabaseEntity):
             raise ValueError(
                 "Cannot remove Personnel from Consumable without assigned role.")
         cur = self.handler.get_db().cursor()
-        sql = f"DELETE FROM {self.DB_PERSONNEL_MAPPING_NAME} WHERE personnel_id = ?, consumable_id = ?, role = ?"
+        sql = f"""DELETE FROM {self.DB_PERSONNEL_MAPPING_NAME} 
+                WHERE personnel_id = ? AND consumable_id = ? AND role = ?"""
         cur.execute(sql, [personnel.id, self.id, personnel.role])
         self.handler.get_db().commit()
         return True
 
     @classmethod
-    def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
+    def _assert_attrs(cls, d: Mapping[str, Any], tags : bool = True) -> None:
         attrs = {"id", "series_id", "name", "type", "status", "parts",
                  "completions", "rating", "start_date", "end_date"}
+        if tags: attrs.add("tags")
         for key in d.keys():
             if key not in attrs:
                 raise ValueError(
@@ -150,11 +179,21 @@ class Consumable(Database.DatabaseEntity):
         ]
 
     @classmethod
+    def _filter_by_tags(cls, tags : Sequence[str]) -> str:
+        templating = ",".join(["?" for _ in tags])
+        sql = f"""SELECT * FROM {Consumable.DB_NAME} 
+            WHERE id IN 
+                (SELECT DISTINCT consumable_id 
+                    FROM {Consumable.DB_TAG_MAPPING_NAME} 
+                    WHERE tag IN ({templating}))
+            """
+        return sql
+
+    @classmethod
     def new(cls, **kwargs) -> Consumable:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         consumable = Consumable(**kwargs)
-
         sql = f"""INSERT INTO {cls.DB_NAME} 
                 (id, series_id, name, type, status, parts, completions, rating, start_date, end_date)
                 VALUES (?,?,?,?,?,?,?,?,?,?)
@@ -169,7 +208,14 @@ class Consumable(Database.DatabaseEntity):
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         where = ["true"]
-        values = []
+        if "tags" in kwargs:
+            values = kwargs["tags"]
+            db_name = cls._filter_by_tags(values)
+            del kwargs["tags"]
+        else:
+            values = []
+            db_name = Consumable.DB_NAME
+
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
@@ -184,7 +230,7 @@ class Consumable(Database.DatabaseEntity):
                 where.append(f"{key} = ?")
                 values.append(value)
 
-        sql = f"SELECT * FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
+        sql = f"SELECT * FROM ({db_name}) WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
         rows = cur.fetchall()
         consumables = []
@@ -199,7 +245,13 @@ class Consumable(Database.DatabaseEntity):
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
         cur = cls.handler.get_db().cursor()
-        values = []
+        if "tags" in where_map:
+            values = where_map["tags"]
+            db_name = cls._filter_by_tags(values)
+            del where_map["tags"]
+        else:
+            values = []
+            db_name = Consumable.DB_NAME
 
         set_placeholders = []
         for key, value in set_map.items():
@@ -228,7 +280,7 @@ class Consumable(Database.DatabaseEntity):
                 where_placeholders.append(f"{key} = ?")
                 values.append(value)
 
-        sql = f"UPDATE {cls.DB_NAME} SET {', '.join(set_placeholders)} WHERE {' AND '.join(where_placeholders)} RETURNING *"
+        sql = f"UPDATE {db_name} SET {', '.join(set_placeholders)} WHERE {' AND '.join(where_placeholders)} RETURNING *"
         cur.execute(sql, values)
         rows = cur.fetchall()
         cls.handler.get_db().commit()
@@ -242,7 +294,14 @@ class Consumable(Database.DatabaseEntity):
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         where = ["true"]
-        values = []
+        if "tags" in where:
+            values = where["tags"]
+            db_name = cls._filter_by_tags(values)
+            del where["tags"]
+        else:
+            values = []
+            db_name = Consumable.DB_NAME
+
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
@@ -257,7 +316,7 @@ class Consumable(Database.DatabaseEntity):
                 where.append(f"{key} = ?")
                 values.append(value)
 
-        sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
+        sql = f"DELETE FROM {db_name} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
         cls.handler.get_db().commit()
         return True
