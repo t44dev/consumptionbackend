@@ -59,6 +59,38 @@ class Consumable(Database.DatabaseEntity):
         if self.parts == 0 and self.status == Status.COMPLETED:
             self.parts = 1
 
+    def get_series(self) -> ser.Series:
+        return ser.Series.find(id=self.series_id)[0]
+    
+    def set_series(self, series : ser.Series) -> bool:
+        self.update({"id" : self.id}, {"series_id" : series.id})
+
+    def get_tags(self) -> Sequence[str]:
+        cur = self.handler.get_db().cursor()
+        sql = f"""SELECT tag FROM {Consumable.DB_TAG_MAPPING_NAME} 
+                WHERE consumable_id = ?"""
+        cur.execute(sql, [self.id])
+        return list(map(lambda x: x[0], cur.fetchall()))
+
+    def add_tag(self, tag: str) -> bool:
+        tag = tag.strip().lower()
+        if tag in self.get_tags():
+            return False
+        cur = self.handler.get_db().cursor()
+        sql = f"INSERT INTO {Consumable.DB_TAG_MAPPING_NAME} (consumable_id, tag) values (?,?)"
+        cur.execute(sql, [self.id, tag])
+        self.handler.get_db().commit()
+        return True
+
+    def remove_tag(self, tag: str) -> bool:
+        tag = tag.strip().lower()
+        cur = self.handler.get_db().cursor()
+        sql = f"""DELETE FROM {Consumable.DB_TAG_MAPPING_NAME} 
+                WHERE consumable_id = ? AND tag = ?"""
+        cur.execute(sql, [self.id, tag])
+        self.handler.get_db().commit()
+        return True
+
     def get_personnel(self) -> Sequence[pers.Personnel]:
         if self.id is None:
             raise ValueError(
@@ -76,35 +108,6 @@ class Consumable(Database.DatabaseEntity):
             personnel.append(
                 pers.Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6], role=row[2]))
         return personnel
-
-    def get_series(self) -> ser.Series:
-        return ser.Series.find(id=self.series_id)[0]
-
-    def get_tags(self) -> Sequence[str]:
-        cur = self.handler.get_db().cursor()
-        sql = f"""SELECT tag FROM {Consumable.DB_TAG_MAPPING_NAME} 
-                WHERE consumable_id = ?"""
-        cur.execute(sql, [self.id])
-        return list(map(lambda x : x[0], cur.fetchall()))
-    
-    def add_tag(self, tag : str) -> bool:
-        tag = tag.strip().lower()
-        if tag in self.get_tags():
-            return False
-        cur = self.handler.get_db().cursor()
-        sql = f"INSERT INTO {Consumable.DB_TAG_MAPPING_NAME} (consumable_id, tag) values (?,?)"
-        cur.execute(sql, [self.id, tag])
-        self.handler.get_db().commit()
-        return True
-    
-    def remove_tag(self, tag : str) -> bool:
-        tag = tag.strip().lower()
-        cur = self.handler.get_db().cursor()
-        sql = f"""DELETE FROM {Consumable.DB_TAG_MAPPING_NAME} 
-                WHERE consumable_id = ? AND tag = ?"""
-        cur.execute(sql, [self.id, tag])
-        self.handler.get_db().commit()
-        return True
 
     def add_personnel(self, personnel: pers.Personnel) -> bool:
         if self.id is None:
@@ -140,10 +143,11 @@ class Consumable(Database.DatabaseEntity):
         return True
 
     @classmethod
-    def _assert_attrs(cls, d: Mapping[str, Any], tags : bool = True) -> None:
+    def _assert_attrs(cls, d: Mapping[str, Any], tags: bool = True) -> None:
         attrs = {"id", "series_id", "name", "type", "status", "parts",
                  "completions", "rating", "start_date", "end_date"}
-        if tags: attrs.add("tags")
+        if tags:
+            attrs.add("tags")
         for key in d.keys():
             if key not in attrs:
                 raise ValueError(
@@ -179,7 +183,7 @@ class Consumable(Database.DatabaseEntity):
         ]
 
     @classmethod
-    def _filter_by_tags(cls, tags : Sequence[str]) -> str:
+    def _filter_by_tags(cls, tags: Sequence[str]) -> str:
         templating = ",".join(["?" for _ in tags])
         sql = f"""SELECT * FROM {Consumable.DB_NAME} 
             WHERE id IN 
