@@ -96,7 +96,7 @@ class DatabaseInstantiator():
                             personnel_id INTEGER NOT NULL,
                             consumable_id INTEGER NOT NULL,
                             role TEXT,
-                            PRIMARY KEY (personnel_id, consumable_id)
+                            PRIMARY KEY (personnel_id, consumable_id, role)
                             FOREIGN KEY (personnel_id)
                                 REFERENCES personnel (id)
                                 ON DELETE CASCADE
