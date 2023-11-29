@@ -9,7 +9,7 @@ import sqlite3
 from collections.abc import Sequence, Mapping
 
 # Consumption Imports
-from .path_handling import CONFIG_PATH
+from .config_handling import CONFIG_PATH
 from .Status import Status
 
 
