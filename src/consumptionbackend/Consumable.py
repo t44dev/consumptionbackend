@@ -24,6 +24,7 @@ class Consumable(Database.DatabaseEntity):
                  type: str = "",
                  status: Union[Status, int] = Status.PLANNING,
                  parts: int = 0,
+                 max_parts: Union[int, None] = None,
                  completions: int = 0,
                  rating: Union[float, None] = None,
                  start_date: Union[float, None] = None,
@@ -35,6 +36,7 @@ class Consumable(Database.DatabaseEntity):
         self.status = Status(status) if not isinstance(
             status, Status) else status
         self.parts = parts
+        self.max_parts = max_parts
         self.completions = completions
         self.rating = rating
         self.start_date = start_date
@@ -56,13 +58,16 @@ class Consumable(Database.DatabaseEntity):
             self.end_date = datetime.utcnow().timestamp()     # Posix-timestamp
         # Parts at least 1 if COMPLETED
         if self.parts == 0 and self.status == Status.COMPLETED:
-            self.parts = 1
+            self.parts = 1 if self.max_parts is None else self.max_parts
+        # Max Parts = Parts if None and COMPLETED
+        if self.status == Status.COMPLETED and self.max_parts is None:
+            self.max_parts = self.parts
 
     def get_series(self) -> ser.Series:
         return ser.Series.find(id=self.series_id)[0]
-    
-    def set_series(self, series : ser.Series) -> bool:
-        self.update({"id" : self.id}, {"series_id" : series.id})
+
+    def set_series(self, series: ser.Series) -> bool:
+        self.update({"id": self.id}, {"series_id": series.id})
 
     def get_tags(self) -> Sequence[str]:
         cur = self.handler.get_db().cursor()
@@ -143,7 +148,7 @@ class Consumable(Database.DatabaseEntity):
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any], tags: bool = True) -> None:
-        attrs = {"id", "series_id", "name", "type", "status", "parts",
+        attrs = {"id", "series_id", "name", "type", "status", "parts", "max_parts",
                  "completions", "rating", "start_date", "end_date"}
         if tags:
             attrs.add("tags")
@@ -160,10 +165,11 @@ class Consumable(Database.DatabaseEntity):
                           type=seq[3],
                           status=seq[4],
                           parts=seq[5],
-                          completions=seq[6],
-                          rating=seq[7],
-                          start_date=seq[8],
-                          end_date=seq[9]
+                          max_parts=seq[6],
+                          completions=seq[7],
+                          rating=seq[8],
+                          start_date=seq[9],
+                          end_date=seq[10]
                           )
 
     @classmethod
@@ -175,6 +181,7 @@ class Consumable(Database.DatabaseEntity):
             cons.type,
             cons.status.value,
             cons.parts,
+            cons.max_parts,
             cons.completions,
             cons.rating,
             cons.start_date,
@@ -198,8 +205,8 @@ class Consumable(Database.DatabaseEntity):
         cur = cls.handler.get_db().cursor()
         consumable = Consumable(**kwargs)
         sql = f"""INSERT INTO {cls.DB_NAME} 
-                (id, series_id, name, type, status, parts, completions, rating, start_date, end_date)
-                VALUES (?,?,?,?,?,?,?,?,?,?)
+                (id, series_id, name, type, status, parts, max_parts, completions, rating, start_date, end_date)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
             """
         cur.execute(sql, cls._consumable_to_seq(consumable))
         cls.handler.get_db().commit()
@@ -348,6 +355,7 @@ class Consumable(Database.DatabaseEntity):
             and self.type == other.type \
             and self.status == other.status \
             and self.parts == other.parts \
+            and self.max_parts == other.max_parts \
             and self.completions == other.completions \
             and self.rating == other.rating \
             and self.start_date == other.start_date \

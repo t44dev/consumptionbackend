@@ -86,6 +86,7 @@ class DatabaseInstantiator():
             type TEXT NOT NULL,
             status INTEGER NOT NULL DEFAULT 0,
             parts INTEGER NOT NULL DEFAULT 0,
+            max_parts INTEGER DEFAULT NULL,
             completions INTEGER NOT NULL DEFAULT 0,
             rating REAL,
             start_date REAL,
@@ -185,7 +186,7 @@ class DatabaseInstantiator():
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_update 
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
-                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value}
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NULL
                 BEGIN
                     UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
                 END
@@ -193,9 +194,45 @@ class DatabaseInstantiator():
         cur.execute(f"""
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_insert
                 AFTER INSERT ON consumables 
-                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value}
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NULL
                 BEGIN
                     UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
+                END
+        """)
+        # Parts is max_parts on COMPLETED if max_parts exists
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS parts_on_completed_update_max
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NOT NULL
+                BEGIN
+                    UPDATE consumables SET parts = NEW.max_parts WHERE id = NEW.id; 
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS parts_on_completed_insert_max
+                AFTER INSERT ON consumables 
+                WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NOT NULL
+                BEGIN
+                    UPDATE consumables SET parts = NEW.max_parts WHERE id = NEW.id; 
+                END
+        """)
+        # Set Max Parts
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS max_parts_on_completed_update 
+                AFTER UPDATE ON consumables 
+                FOR EACH ROW
+                WHEN NEW.max_parts IS NULL AND NEW.parts <> 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET max_parts = NEW.parts WHERE id = NEW.id; 
+                END
+        """)
+        cur.execute(f"""
+            CREATE TRIGGER IF NOT EXISTS max_parts_on_completed_insert
+                AFTER INSERT ON consumables 
+                WHEN NEW.max_parts IS NULL AND NEW.parts <> 0 AND NEW.status = {Status.COMPLETED.value}
+                BEGIN
+                    UPDATE consumables SET max_parts = NEW.parts WHERE id = NEW.id; 
                 END
         """)
         # Errors
