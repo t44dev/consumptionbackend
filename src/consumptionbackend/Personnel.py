@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Union, Any
 
-# Package Imports
+# Personnel Imports
 from . import Database
 from . import Consumable as cons
 
@@ -163,7 +163,7 @@ class Personnel(Database.DatabaseEntity):
         # TODO: Make this be in the format First "Pseudonym" Last, omitting NoneTypes
         return f"{self.__class__.__name__} | {self.first_name} {self.last_name} with ID: {self.id}"
 
-    def __eq__(self, other: Personnel) -> bool:
+    def _precise_eq(self, other: Personnel) -> bool:
         return super().__eq__(other) \
             and self.first_name == other.first_name \
             and self.last_name == other.last_name \

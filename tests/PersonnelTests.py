@@ -26,7 +26,7 @@ class TestPersonnel(unittest.TestCase):
         d = {"first_name": "test_new", "last_name": "World", "pseudonym": "!!"}
         persTest = Personnel.new(**d)
         persVerify = Personnel(**d, id=persTest.id)
-        self.assertEqual(persTest, persVerify)
+        self.assertTrue(persTest._precise_eq(persVerify))
         self.assertIsNotNone(persTest.id)
 
     def test_find(self):
@@ -44,7 +44,7 @@ class TestPersonnel(unittest.TestCase):
         set_map = {"pseudonym": "update"}
         persTest = Personnel.update(where_map, set_map)[0]
         persVerify.pseudonym = set_map["pseudonym"]
-        self.assertEqual(persTest, persVerify)
+        self.assertTrue(persTest._precise_eq(persVerify))
 
     def test_delete(self):
         d = {"first_name": "test_delete",

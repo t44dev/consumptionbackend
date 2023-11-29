@@ -8,7 +8,7 @@ import json
 import sqlite3
 from collections.abc import Sequence, Mapping
 
-# Package Imports
+# Consumption Imports
 from .path_handling import CONFIG_PATH
 from .Status import Status
 
@@ -61,6 +61,9 @@ class DatabaseEntity(ABC):
 
     def __eq__(self, other: DatabaseEntity) -> bool:
         return self.id == other.id
+    
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
 class DatabaseInstantiator():

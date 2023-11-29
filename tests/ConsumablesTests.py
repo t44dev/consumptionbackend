@@ -27,7 +27,7 @@ class TestConsumable(unittest.TestCase):
              "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
         consTest = Consumable.new(**d)
         consVerify = Consumable(**d, series_id=-1, id=consTest.id)
-        self.assertEqual(consTest, consVerify)
+        self.assertTrue(consTest._precise_eq(consVerify))
         self.assertIsNotNone(consTest.id)
 
     def test_find(self):
@@ -35,7 +35,7 @@ class TestConsumable(unittest.TestCase):
              "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
         consVerify = Consumable.new(**d)
         consTest = Consumable.find(**d)[0]
-        self.assertEqual(consTest, consVerify)
+        self.assertTrue(consTest._precise_eq(consVerify))
 
     def test_update(self):
         d = {"name": "GHI", "type": "Novel", "status": 2, "parts": 15,
@@ -46,7 +46,7 @@ class TestConsumable(unittest.TestCase):
         consTest = Consumable.update(where_map, set_map)[0]
         consVerify.name = set_map["name"]
         consVerify.type = set_map["type"].upper()
-        self.assertEqual(consTest, consVerify)
+        self.assertTrue(consTest._precise_eq(consVerify))
 
     def test_delete(self):
         d = {"name": "JKL", "type": "Novel", "status": 2, "parts": 1337,

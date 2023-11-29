@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Union, Any
 
-# Package Imports
+# Consumption Imports
 from . import Database
 from . import Consumable as cons
 
@@ -140,6 +140,6 @@ class Series(Database.DatabaseEntity):
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
 
-    def __eq__(self, other: Series) -> bool:
+    def _precise_eq(self, other: Series) -> bool:
         return super().__eq__(other) \
             and self.name == other.name

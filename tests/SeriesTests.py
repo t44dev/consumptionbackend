@@ -27,14 +27,14 @@ class TestSeries(unittest.TestCase):
         d = {"name": "test_new"}
         serTest = Series.new(**d)
         serVerify = Series(**d, id=serTest.id)
-        self.assertEqual(serTest, serVerify)
+        self.assertTrue(serTest._precise_eq(serVerify))
         self.assertIsNotNone(serTest.id)
 
     def test_find(self):
         d = {"name": "test_find"}
         serVerify = Series.new(**d)
         serTest = Series.find(**d)[0]
-        self.assertEqual(serTest, serVerify)
+        self.assertTrue(serTest._precise_eq(serVerify))
 
     def test_update(self):
         d = {"name": "test_update"}
@@ -43,7 +43,7 @@ class TestSeries(unittest.TestCase):
         set_map = {"name": "ABC"}
         serTest = Series.update(where_map, set_map)[0]
         serVerify.name = set_map["name"]
-        self.assertEqual(serTest, serVerify)
+        self.assertTrue(serTest._precise_eq(serVerify))
 
     def test_delete(self):
         d = {"name": "test_delete"}

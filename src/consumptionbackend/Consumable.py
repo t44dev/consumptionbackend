@@ -1,11 +1,10 @@
 # General Imports
 from __future__ import annotations
-from typing import Union, Any, Tuple
+from typing import Union, Any
 from datetime import datetime
-from enum import Enum
 from collections.abc import Sequence, Mapping
 
-# Package Imports
+# Consumption Imports
 from . import Database
 from . import Personnel as pers
 from . import Series as ser
@@ -342,7 +341,7 @@ class Consumable(Database.DatabaseEntity):
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
 
-    def __eq__(self, other: Consumable) -> bool:
+    def _precise_eq(self, other: Consumable) -> bool:
         return super().__eq__(other) \
             and self.series_id == other.series_id \
             and self.name == other.name \
