@@ -1,6 +1,7 @@
 from .config_handling import get_config, write_config
 from .Database import DatabaseInstantiator, DatabaseHandler
 
+
 def update():
     config = get_config()
     if "version" not in config or config["version"] != "2.0.0":

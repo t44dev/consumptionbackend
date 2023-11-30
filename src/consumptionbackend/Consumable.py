@@ -12,29 +12,30 @@ from .Status import Status
 
 
 class Consumable(Database.DatabaseEntity):
-
     DB_NAME = "consumables"
     DB_PERSONNEL_MAPPING_NAME = "consumable_personnel"
     DB_TAG_MAPPING_NAME = "consumable_tags"
 
-    def __init__(self, *args,
-                 id: Union[int, None] = None,
-                 series_id: int = -1,
-                 name: str = "",
-                 type: str = "",
-                 status: Union[Status, int] = Status.PLANNING,
-                 parts: int = 0,
-                 max_parts: Union[int, None] = None,
-                 completions: int = 0,
-                 rating: Union[float, None] = None,
-                 start_date: Union[float, None] = None,
-                 end_date: Union[float, None] = None) -> None:
+    def __init__(
+        self,
+        *args,
+        id: Union[int, None] = None,
+        series_id: int = -1,
+        name: str = "",
+        type: str = "",
+        status: Union[Status, int] = Status.PLANNING,
+        parts: int = 0,
+        max_parts: Union[int, None] = None,
+        completions: int = 0,
+        rating: Union[float, None] = None,
+        start_date: Union[float, None] = None,
+        end_date: Union[float, None] = None,
+    ) -> None:
         super().__init__(*args, id=id)
         self.series_id = series_id
         self.name = name
         self.type = type.upper()
-        self.status = Status(status) if not isinstance(
-            status, Status) else status
+        self.status = Status(status) if not isinstance(status, Status) else status
         self.parts = parts
         self.max_parts = max_parts
         self.completions = completions
@@ -52,10 +53,10 @@ class Consumable(Database.DatabaseEntity):
             self.completions = 1
         # Set start_date if IN_PROGRESS
         if self.start_date is None and self.status == Status.IN_PROGRESS:
-            self.start_date = datetime.utcnow().timestamp()     # Posix-timestamp
+            self.start_date = datetime.utcnow().timestamp()  # Posix-timestamp
         # Set end_date if COMPLETED
         if self.end_date is None and self.status == Status.COMPLETED:
-            self.end_date = datetime.utcnow().timestamp()     # Posix-timestamp
+            self.end_date = datetime.utcnow().timestamp()  # Posix-timestamp
         # Parts at least 1 if COMPLETED
         if self.parts == 0 and self.status == Status.COMPLETED:
             self.parts = 1 if self.max_parts is None else self.max_parts
@@ -97,8 +98,7 @@ class Consumable(Database.DatabaseEntity):
 
     def get_personnel(self) -> Sequence[pers.Personnel]:
         if self.id is None:
-            raise ValueError(
-                "Cannot find Personnel for Consumable without ID.")
+            raise ValueError("Cannot find Personnel for Consumable without ID.")
         cur = self.handler.get_db().cursor()
         sql = f"""SELECT * FROM {Consumable.DB_PERSONNEL_MAPPING_NAME} 
                     LEFT JOIN {pers.Personnel.DB_NAME} 
@@ -110,19 +110,25 @@ class Consumable(Database.DatabaseEntity):
         personnel = []
         for row in rows:
             personnel.append(
-                pers.Personnel(id=row[3], first_name=row[4], last_name=row[5], pseudonym=row[6], role=row[2]))
+                pers.Personnel(
+                    id=row[3],
+                    first_name=row[4],
+                    last_name=row[5],
+                    pseudonym=row[6],
+                    role=row[2],
+                )
+            )
         return personnel
 
     def add_personnel(self, personnel: pers.Personnel) -> bool:
         if self.id is None:
-            raise ValueError(
-                "Cannot assign Personnel to Consumable without ID.")
+            raise ValueError("Cannot assign Personnel to Consumable without ID.")
         if personnel.id is None:
-            raise ValueError(
-                "Cannot assign a Personnel to Consumable without an ID.")
+            raise ValueError("Cannot assign a Personnel to Consumable without an ID.")
         if not personnel.role:
             raise ValueError(
-                "Cannot assign Personnel to Consumable without assigned role.")
+                "Cannot assign Personnel to Consumable without assigned role."
+            )
         cur = self.handler.get_db().cursor()
         sql = f"INSERT INTO {self.DB_PERSONNEL_MAPPING_NAME} (personnel_id, consumable_id, role) VALUES (?,?,?)"
         cur.execute(sql, [personnel.id, self.id, personnel.role])
@@ -131,14 +137,13 @@ class Consumable(Database.DatabaseEntity):
 
     def remove_personnel(self, personnel: pers.Personnel) -> bool:
         if self.id is None:
-            raise ValueError(
-                "Cannot remove Personnel from Consumable without ID.")
+            raise ValueError("Cannot remove Personnel from Consumable without ID.")
         if personnel.id is None:
-            raise ValueError(
-                "Cannot remove a Personnel from Consumable without an ID.")
+            raise ValueError("Cannot remove a Personnel from Consumable without an ID.")
         if not personnel.role:
             raise ValueError(
-                "Cannot remove Personnel from Consumable without assigned role.")
+                "Cannot remove Personnel from Consumable without assigned role."
+            )
         cur = self.handler.get_db().cursor()
         sql = f"""DELETE FROM {self.DB_PERSONNEL_MAPPING_NAME} 
                 WHERE personnel_id = ? AND consumable_id = ? AND role = ?"""
@@ -148,29 +153,42 @@ class Consumable(Database.DatabaseEntity):
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any], tags: bool = True) -> None:
-        attrs = {"id", "series_id", "name", "type", "status", "parts", "max_parts",
-                 "completions", "rating", "start_date", "end_date"}
+        attrs = {
+            "id",
+            "series_id",
+            "name",
+            "type",
+            "status",
+            "parts",
+            "max_parts",
+            "completions",
+            "rating",
+            "start_date",
+            "end_date",
+        }
         if tags:
             attrs.add("tags")
         for key in d.keys():
             if key not in attrs:
                 raise ValueError(
-                    f"Improper key provided in attribute mapping for Consumable: {key}")
+                    f"Improper key provided in attribute mapping for Consumable: {key}"
+                )
 
     @classmethod
     def _seq_to_consumable(cls, seq: Sequence[Any]) -> Consumable:
-        return Consumable(id=seq[0],
-                          series_id=seq[1],
-                          name=seq[2],
-                          type=seq[3],
-                          status=seq[4],
-                          parts=seq[5],
-                          max_parts=seq[6],
-                          completions=seq[7],
-                          rating=seq[8],
-                          start_date=seq[9],
-                          end_date=seq[10]
-                          )
+        return Consumable(
+            id=seq[0],
+            series_id=seq[1],
+            name=seq[2],
+            type=seq[3],
+            status=seq[4],
+            parts=seq[5],
+            max_parts=seq[6],
+            completions=seq[7],
+            rating=seq[8],
+            start_date=seq[9],
+            end_date=seq[10],
+        )
 
     @classmethod
     def _consumable_to_seq(cls, cons: Consumable) -> Sequence[Any]:
@@ -185,7 +203,7 @@ class Consumable(Database.DatabaseEntity):
             cons.completions,
             cons.rating,
             cons.start_date,
-            cons.end_date
+            cons.end_date,
         ]
 
     @classmethod
@@ -229,7 +247,7 @@ class Consumable(Database.DatabaseEntity):
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             elif key == "type":
                 where.append(f"upper({key}) = upper(?)")
                 values.append(value)
@@ -249,7 +267,9 @@ class Consumable(Database.DatabaseEntity):
         return consumables
 
     @classmethod
-    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Consumable]:
+    def update(
+        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+    ) -> Sequence[Consumable]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
@@ -279,7 +299,7 @@ class Consumable(Database.DatabaseEntity):
         for key, value in where_map.items():
             if key == "name":
                 where_placeholders.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             elif key == "type":
                 where_placeholders.append(f"upper({key}) = upper(?)")
                 values.append(value)
@@ -315,7 +335,7 @@ class Consumable(Database.DatabaseEntity):
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             elif key == "type":
                 where.append(f"upper({key}) = upper(?)")
                 values.append(value)
@@ -333,30 +353,30 @@ class Consumable(Database.DatabaseEntity):
 
     def update_self(self, set_map: Mapping[str, Any]) -> Consumable:
         if self.id is None:
-            raise ValueError(
-                "Cannot update Consumable that does not have an ID.")
+            raise ValueError("Cannot update Consumable that does not have an ID.")
         update = self.update({"id": self.id}, set_map)
         assert len(update) == 1
         return update[0]
 
     def delete_self(self) -> bool:
         if self.id is None:
-            raise ValueError(
-                "Cannot delete Consumable that does not have an ID.")
+            raise ValueError("Cannot delete Consumable that does not have an ID.")
         return self.delete(id=self.id)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
 
     def _precise_eq(self, other: Consumable) -> bool:
-        return super().__eq__(other) \
-            and self.series_id == other.series_id \
-            and self.name == other.name \
-            and self.type == other.type \
-            and self.status == other.status \
-            and self.parts == other.parts \
-            and self.max_parts == other.max_parts \
-            and self.completions == other.completions \
-            and self.rating == other.rating \
-            and self.start_date == other.start_date \
+        return (
+            super().__eq__(other)
+            and self.series_id == other.series_id
+            and self.name == other.name
+            and self.type == other.type
+            and self.status == other.status
+            and self.parts == other.parts
+            and self.max_parts == other.max_parts
+            and self.completions == other.completions
+            and self.rating == other.rating
+            and self.start_date == other.start_date
             and self.end_date == other.end_date
+        )

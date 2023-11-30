@@ -9,12 +9,9 @@ from . import Consumable as cons
 
 
 class Series(Database.DatabaseEntity):
-
     DB_NAME = "series"
 
-    def __init__(self, *args,
-                 id: Union[int, None] = None,
-                 name: str = "") -> None:
+    def __init__(self, *args, id: Union[int, None] = None, name: str = "") -> None:
         super().__init__(*args, id=id)
         self.name = name
 
@@ -29,7 +26,8 @@ class Series(Database.DatabaseEntity):
         for key in d.keys():
             if key not in attrs:
                 raise ValueError(
-                    f"Improper key provided in attribute mapping for Series: {key}")
+                    f"Improper key provided in attribute mapping for Series: {key}"
+                )
 
     @classmethod
     def _seq_to_series(cls, seq: Sequence[Any]) -> Series:
@@ -59,7 +57,7 @@ class Series(Database.DatabaseEntity):
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             else:
                 where.append(f"{key} = ?")
                 values.append(value)
@@ -73,7 +71,9 @@ class Series(Database.DatabaseEntity):
         return series
 
     @classmethod
-    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[Series]:
+    def update(
+        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+    ) -> Sequence[Series]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
@@ -90,7 +90,7 @@ class Series(Database.DatabaseEntity):
         for key, value in where_map.items():
             if key == "name":
                 where_placeholders.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             else:
                 where_placeholders.append(f"{key} = ?")
                 values.append(value)
@@ -113,7 +113,7 @@ class Series(Database.DatabaseEntity):
         for key, value in kwargs.items():
             if key == "name":
                 where.append(f"upper({key}) LIKE upper(?)")
-                values.append(f'%{value}%')
+                values.append(f"%{value}%")
             else:
                 where.append(f"{key} = ?")
                 values.append(value)
@@ -125,21 +125,18 @@ class Series(Database.DatabaseEntity):
 
     def update_self(self, set_map: Mapping[str, Any]) -> Series:
         if self.id is None:
-            raise ValueError(
-                "Cannot update Series that does not have an ID.")
+            raise ValueError("Cannot update Series that does not have an ID.")
         update = self.update({"id": self.id}, set_map)
         assert len(update) == 1
         return update[0]
 
     def delete_self(self) -> bool:
         if self.id is None:
-            raise ValueError(
-                "Cannot delete Series that does not have an ID.")
+            raise ValueError("Cannot delete Series that does not have an ID.")
         return self.delete(id=self.id)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
 
     def _precise_eq(self, other: Series) -> bool:
-        return super().__eq__(other) \
-            and self.name == other.name
+        return super().__eq__(other) and self.name == other.name

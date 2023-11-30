@@ -13,8 +13,7 @@ from .config_handling import CONFIG_PATH
 from .Status import Status
 
 
-class DatabaseHandler():
-
+class DatabaseHandler:
     DB_CONNECTION: sqlite3.Connection = None
 
     def __init__(self) -> None:
@@ -31,7 +30,6 @@ class DatabaseHandler():
 
 
 class DatabaseEntity(ABC):
-
     handler: DatabaseHandler = DatabaseHandler
 
     def __init__(self, *args, id: Union[int, None] = None) -> None:
@@ -51,7 +49,9 @@ class DatabaseEntity(ABC):
 
     @classmethod
     @abstractmethod
-    def update(cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]) -> Sequence[DatabaseEntity]:
+    def update(
+        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+    ) -> Sequence[DatabaseEntity]:
         pass
 
     @classmethod
@@ -61,13 +61,12 @@ class DatabaseEntity(ABC):
 
     def __eq__(self, other: DatabaseEntity) -> bool:
         return self.id == other.id
-    
+
     def __hash__(self) -> int:
         return hash(self.id)
 
 
-class DatabaseInstantiator():
-
+class DatabaseInstantiator:
     def __init__(self) -> None:
         raise RuntimeError("Class cannot be used outside of a static context.")
 
@@ -128,7 +127,8 @@ class DatabaseInstantiator():
     def _consumable_triggers(cls):
         cur = DatabaseHandler.get_db().cursor()
         # Set completions if COMPLETED
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS completions_on_completed_update
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -136,17 +136,21 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET completions = 1 WHERE id = NEW.id;
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS completions_on_completed_insert
                 AFTER INSERT ON consumables 
                 WHEN NEW.completions = 0 AND NEW.status = {Status.COMPLETED.value}
                 BEGIN
                     UPDATE consumables SET completions = 1 WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Set start_date if IN_PROGRESS
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS start_date_on_in_progress_update 
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -154,17 +158,21 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET start_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS start_date_on_in_progress_insert 
                 AFTER INSERT ON consumables 
                 WHEN NEW.start_date IS NULL AND NEW.status = {Status.IN_PROGRESS.value}
                 BEGIN
                     UPDATE consumables SET start_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Set end_date if COMPLETED
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS end_date_on_completed_update 
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -172,17 +180,21 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET end_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS end_date_on_completed_insert
                 AFTER INSERT ON consumables 
                 WHEN NEW.end_date IS NULL AND NEW.status = {Status.COMPLETED.value} 
                 BEGIN
                     UPDATE consumables SET end_date = unixepoch('now', 'utc') WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Parts at least 1 on COMPLETED
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_update 
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -190,17 +202,21 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_insert
                 AFTER INSERT ON consumables 
                 WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NULL
                 BEGIN
                     UPDATE consumables SET parts = 1 WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Parts is max_parts on COMPLETED if max_parts exists
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_update_max
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -208,17 +224,21 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET parts = NEW.max_parts WHERE id = NEW.id; 
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS parts_on_completed_insert_max
                 AFTER INSERT ON consumables 
                 WHEN NEW.parts = 0 AND NEW.status = {Status.COMPLETED.value} AND NEW.max_parts IS NOT NULL
                 BEGIN
                     UPDATE consumables SET parts = NEW.max_parts WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Set Max Parts
-        cur.execute(f"""
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS max_parts_on_completed_update 
                 AFTER UPDATE ON consumables 
                 FOR EACH ROW
@@ -226,32 +246,39 @@ class DatabaseInstantiator():
                 BEGIN
                     UPDATE consumables SET max_parts = NEW.parts WHERE id = NEW.id; 
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            f"""
             CREATE TRIGGER IF NOT EXISTS max_parts_on_completed_insert
                 AFTER INSERT ON consumables 
                 WHEN NEW.max_parts IS NULL AND NEW.parts <> 0 AND NEW.status = {Status.COMPLETED.value}
                 BEGIN
                     UPDATE consumables SET max_parts = NEW.parts WHERE id = NEW.id; 
                 END
-        """)
+        """
+        )
         # Errors
-        cur.execute(f"""
+        cur.execute(
+            """
             CREATE TRIGGER IF NOT EXISTS date_error_update 
                 AFTER UPDATE ON consumables 
                 WHEN NEW.start_date IS NOT NULL AND NEW.end_date IS NOT NULL AND NEW.start_date > NEW.end_date
                 BEGIN
                     SELECT RAISE(ROLLBACK, 'end date must be after start date');
                 END
-        """)
-        cur.execute(f"""
+        """
+        )
+        cur.execute(
+            """
             CREATE TRIGGER IF NOT EXISTS date_error_insert 
                 AFTER INSERT ON consumables 
                 WHEN NEW.start_date IS NOT NULL AND NEW.end_date IS NOT NULL AND NEW.start_date > NEW.end_date
                 BEGIN
                     SELECT RAISE(ROLLBACK, 'end date must be after start date');
                 END
-        """)
+        """
+        )
 
     @classmethod
     def personnel_table(cls):
@@ -282,7 +309,8 @@ class DatabaseInstantiator():
     def _series_triggers(cls):
         cur = DatabaseHandler.get_db().cursor()
         # Cannot delete ID = -1
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TRIGGER IF NOT EXISTS delete_none_series 
                 BEFORE DELETE ON series 
                 FOR EACH ROW
@@ -290,4 +318,5 @@ class DatabaseInstantiator():
                 BEGIN
                     SELECT RAISE(ROLLBACK, 'cannot delete series with ID -1');
                 END
-        """)
+        """
+        )
