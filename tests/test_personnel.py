@@ -10,7 +10,6 @@ DatabaseHandler.DB_CONNECTION = db
 
 
 class TestPersonnel(unittest.TestCase):
-
     def setUp(self) -> None:
         DatabaseInstantiator.run()
 
@@ -18,7 +17,8 @@ class TestPersonnel(unittest.TestCase):
         db = sqlite3.connect("testdb.db")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Consumable.DB_NAME}")
         db.cursor().execute(
-            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}")
+            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}"
+        )
         db.cursor().execute(f"DROP TABLE IF EXISTS {Series.DB_NAME}")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Personnel.DB_NAME}")
 
@@ -37,8 +37,7 @@ class TestPersonnel(unittest.TestCase):
         self.assertIn(persTest[0], persVerify)
 
     def test_update(self):
-        d = {"first_name": "test_update",
-             "last_name": "World", "pseudonym": "!!"}
+        d = {"first_name": "test_update", "last_name": "World", "pseudonym": "!!"}
         persVerify = Personnel.new(**d)
         where_map = {"first_name": "test_update"}
         set_map = {"pseudonym": "update"}
@@ -47,13 +46,12 @@ class TestPersonnel(unittest.TestCase):
         self.assertTrue(persTest._precise_eq(persVerify))
 
     def test_delete(self):
-        d = {"first_name": "test_delete",
-             "last_name": "World", "pseudonym": "!!"}
+        d = {"first_name": "test_delete", "last_name": "World", "pseudonym": "!!"}
         Personnel.new(**d)
         self.assertTrue(Personnel.delete(first_name=d["first_name"]))
         verify = Personnel.find(**d)
         self.assertEqual(len(verify), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

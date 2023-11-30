@@ -1,4 +1,3 @@
-
 from consumptionbackend.Personnel import Personnel
 from consumptionbackend.Series import Series
 from consumptionbackend.Consumable import Consumable
@@ -11,7 +10,6 @@ DatabaseHandler.DB_CONNECTION = db
 
 
 class TestSeries(unittest.TestCase):
-
     def setUp(self) -> None:
         DatabaseInstantiator.run()
 
@@ -19,7 +17,8 @@ class TestSeries(unittest.TestCase):
         db = sqlite3.connect("testdb.db")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Consumable.DB_NAME}")
         db.cursor().execute(
-            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}")
+            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}"
+        )
         db.cursor().execute(f"DROP TABLE IF EXISTS {Series.DB_NAME}")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Personnel.DB_NAME}")
 
@@ -53,5 +52,5 @@ class TestSeries(unittest.TestCase):
         self.assertEqual(len(verify), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,6 @@ DatabaseHandler.DB_CONNECTION = db
 
 
 class TestConsumable(unittest.TestCase):
-
     def setUp(self) -> None:
         DatabaseInstantiator.run()
 
@@ -18,28 +17,53 @@ class TestConsumable(unittest.TestCase):
         db = sqlite3.connect("testdb.db")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Consumable.DB_NAME}")
         db.cursor().execute(
-            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}")
+            f"DROP TABLE IF EXISTS {Consumable.DB_PERSONNEL_MAPPING_NAME}"
+        )
         db.cursor().execute(f"DROP TABLE IF EXISTS {Series.DB_NAME}")
         db.cursor().execute(f"DROP TABLE IF EXISTS {Personnel.DB_NAME}")
 
     def test_new(self):
-        d = {"name": "ABC", "type": "Novel", "status": 1, "parts": 15,
-             "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
+        d = {
+            "name": "ABC",
+            "type": "Novel",
+            "status": 1,
+            "parts": 15,
+            "completions": 2,
+            "rating": 7.4,
+            "start_date": 1000.5,
+            "end_date": 2000.5,
+        }
         consTest = Consumable.new(**d)
         consVerify = Consumable(**d, series_id=-1, id=consTest.id)
         self.assertTrue(consTest._precise_eq(consVerify))
         self.assertIsNotNone(consTest.id)
 
     def test_find(self):
-        d = {"name": "DEF", "type": "Novel", "status": 1, "parts": 15,
-             "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
+        d = {
+            "name": "DEF",
+            "type": "Novel",
+            "status": 1,
+            "parts": 15,
+            "completions": 2,
+            "rating": 7.4,
+            "start_date": 1000.5,
+            "end_date": 2000.5,
+        }
         consVerify = Consumable.new(**d)
         consTest = Consumable.find(**d)[0]
         self.assertTrue(consTest._precise_eq(consVerify))
 
     def test_update(self):
-        d = {"name": "GHI", "type": "Novel", "status": 2, "parts": 15,
-             "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
+        d = {
+            "name": "GHI",
+            "type": "Novel",
+            "status": 2,
+            "parts": 15,
+            "completions": 2,
+            "rating": 7.4,
+            "start_date": 1000.5,
+            "end_date": 2000.5,
+        }
         consVerify = Consumable.new(**d)
         where_map = {"name": "GHI", "parts": 15}
         set_map = {"name": "ABC", "type": "tv"}
@@ -49,13 +73,21 @@ class TestConsumable(unittest.TestCase):
         self.assertTrue(consTest._precise_eq(consVerify))
 
     def test_delete(self):
-        d = {"name": "JKL", "type": "Novel", "status": 2, "parts": 1337,
-             "completions": 2, "rating": 7.4, "start_date": 1000.5, "end_date": 2000.5}
+        d = {
+            "name": "JKL",
+            "type": "Novel",
+            "status": 2,
+            "parts": 1337,
+            "completions": 2,
+            "rating": 7.4,
+            "start_date": 1000.5,
+            "end_date": 2000.5,
+        }
         Consumable.new(**d)
         self.assertTrue(Consumable.delete(parts=d["parts"]))
         verify = Consumable.find(name="JKL")
         self.assertEqual(len(verify), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
