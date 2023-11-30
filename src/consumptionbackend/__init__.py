@@ -1,3 +1,3 @@
-from .path_handling import setup_config
+from . import setup_script
 
-setup_config()
+setup_script.setup()
