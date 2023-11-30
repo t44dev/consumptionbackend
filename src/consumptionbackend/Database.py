@@ -156,7 +156,7 @@ class DatabaseInstantiator:
                 FOR EACH ROW
                 WHEN NEW.start_date IS NULL AND NEW.status = {Status.IN_PROGRESS.value}
                 BEGIN
-                    UPDATE consumables SET start_date = strftime('%s'); WHERE id = NEW.id; 
+                    UPDATE consumables SET start_date = strftime('%s') WHERE id = NEW.id; 
                 END
         """
         )
@@ -166,7 +166,7 @@ class DatabaseInstantiator:
                 AFTER INSERT ON consumables 
                 WHEN NEW.start_date IS NULL AND NEW.status = {Status.IN_PROGRESS.value}
                 BEGIN
-                    UPDATE consumables SET start_date = strftime('%s'); WHERE id = NEW.id; 
+                    UPDATE consumables SET start_date = strftime('%s') WHERE id = NEW.id; 
                 END
         """
         )
@@ -178,7 +178,7 @@ class DatabaseInstantiator:
                 FOR EACH ROW
                 WHEN NEW.end_date IS NULL AND NEW.status = {Status.COMPLETED.value} 
                 BEGIN
-                    UPDATE consumables SET end_date = strftime('%s'); WHERE id = NEW.id; 
+                    UPDATE consumables SET end_date = strftime('%s') WHERE id = NEW.id; 
                 END
         """
         )
@@ -188,7 +188,7 @@ class DatabaseInstantiator:
                 AFTER INSERT ON consumables 
                 WHEN NEW.end_date IS NULL AND NEW.status = {Status.COMPLETED.value} 
                 BEGIN
-                    UPDATE consumables SET end_date = strftime('%s'); WHERE id = NEW.id; 
+                    UPDATE consumables SET end_date = strftime('%s') WHERE id = NEW.id; 
                 END
         """
         )
