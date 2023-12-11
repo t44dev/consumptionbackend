@@ -211,9 +211,12 @@ class Consumable(Database.DatabaseEntity):
         templating = ",".join(["?" for _ in tags])
         sql = f"""SELECT * FROM {Consumable.DB_NAME} 
             WHERE id IN 
-                (SELECT DISTINCT consumable_id 
+                (SELECT consumable_id 
                     FROM {Consumable.DB_TAG_MAPPING_NAME} 
-                    WHERE tag IN ({templating}))
+                    WHERE tag IN ({templating})
+                    GROUP BY consumable_id
+                    HAVING COUNT(*) = {len(tags)}
+                )
             """
         return sql
 
