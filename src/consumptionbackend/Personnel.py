@@ -1,5 +1,6 @@
 # General Imports
 from __future__ import annotations
+import logging
 from collections.abc import Mapping, Sequence
 from typing import Union, Any
 
@@ -61,7 +62,7 @@ class Personnel(Database.DatabaseEntity):
         )
 
     @classmethod
-    def new(cls, **kwargs) -> Personnel:
+    def new(cls, do_log : bool = True, **kwargs) -> Personnel:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         personnel = Personnel(**kwargs)
@@ -81,6 +82,9 @@ class Personnel(Database.DatabaseEntity):
         )
         cls.handler.get_db().commit()
         personnel.id = cur.lastrowid
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(f"NEW_CONSUMABLE#{personnel._csv_str()}")
         return personnel
 
     @classmethod
@@ -107,12 +111,13 @@ class Personnel(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any], do_log : bool = True
     ) -> Sequence[Personnel]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
+        old_personnel = {p.id : p for p in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         values = []
 
@@ -136,12 +141,17 @@ class Personnel(Database.DatabaseEntity):
         cls.handler.get_db().commit()
         personnel = []
         for row in rows:
-            personnel.append(cls._seq_to_personnel(row))
+            new_pers = cls._seq_to_personnel(row)
+            personnel.append(new_pers)
+            # Logging
+            if do_log:
+                logging.getLogger(__name__).info(f"UPDATE_PERSONNEL#{old_personnel.get(new_pers.id)._csv_str()}#{new_pers._csv_str()}")
         return personnel
 
     @classmethod
-    def delete(cls, **kwargs) -> bool:
+    def delete(cls, do_log : bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
+        old_personnel = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()
         where = ["true"]
         values = []
@@ -156,6 +166,11 @@ class Personnel(Database.DatabaseEntity):
         sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
         cls.handler.get_db().commit()
+        # Logging
+        if do_log:
+            logger = logging.getLogger(__name__)
+            for pers in old_personnel:
+                logger.info(f"DELETE_PERSONNEL#{pers._csv_str()}")
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Personnel:
@@ -173,6 +188,9 @@ class Personnel(Database.DatabaseEntity):
     def __str__(self) -> str:
         # TODO: Make this be in the format First "Pseudonym" Last, omitting NoneTypes
         return f"{self.__class__.__name__} | {self.first_name} {self.last_name} with ID: {self.id}"
+
+    def _csv_str(self) -> str:
+        return f"{self.id},'{self.first_name}','{self.pseudonym}','{self.last_name}'"
 
     def _precise_eq(self, other: Personnel) -> bool:
         return (
