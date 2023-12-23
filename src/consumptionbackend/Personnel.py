@@ -62,7 +62,7 @@ class Personnel(Database.DatabaseEntity):
         )
 
     @classmethod
-    def new(cls, do_log : bool = True, **kwargs) -> Personnel:
+    def new(cls, do_log: bool = True, **kwargs) -> Personnel:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         personnel = Personnel(**kwargs)
@@ -111,13 +111,16 @@ class Personnel(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any], do_log : bool = True
+        cls,
+        where_map: Mapping[str, Any],
+        set_map: Mapping[str, Any],
+        do_log: bool = True,
     ) -> Sequence[Personnel]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        old_personnel = {p.id : p for p in cls.find(**where_map.copy())}
+        old_personnel = {p.id: p for p in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         values = []
 
@@ -145,11 +148,13 @@ class Personnel(Database.DatabaseEntity):
             personnel.append(new_pers)
             # Logging
             if do_log:
-                logging.getLogger(__name__).info(f"UPDATE_PERSONNEL#{old_personnel.get(new_pers.id)._csv_str()}#{new_pers._csv_str()}")
+                logging.getLogger(__name__).info(
+                    f"UPDATE_PERSONNEL#{old_personnel.get(new_pers.id)._csv_str()}#{new_pers._csv_str()}"
+                )
         return personnel
 
     @classmethod
-    def delete(cls, do_log : bool = True, **kwargs) -> bool:
+    def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
         old_personnel = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()

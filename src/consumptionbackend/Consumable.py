@@ -81,7 +81,7 @@ class Consumable(Database.DatabaseEntity):
         cur.execute(sql, [self.id])
         return list(map(lambda x: x[0], cur.fetchall()))
 
-    def add_tag(self, tag: str, do_log : bool = True) -> bool:
+    def add_tag(self, tag: str, do_log: bool = True) -> bool:
         tag = tag.strip().lower()
         if tag in self.get_tags():
             return False
@@ -91,10 +91,10 @@ class Consumable(Database.DatabaseEntity):
         self.handler.get_db().commit()
         # Logging
         if do_log:
-           logging.getLogger(__name__).info(f"ADD_TAG#{self.id},'{tag}'")
+            logging.getLogger(__name__).info(f"ADD_TAG#{self.id},'{tag}'")
         return True
 
-    def remove_tag(self, tag: str, do_log : bool = True) -> bool:
+    def remove_tag(self, tag: str, do_log: bool = True) -> bool:
         tag = tag.strip().lower()
         cur = self.handler.get_db().cursor()
         sql = f"""DELETE FROM {Consumable.DB_TAG_MAPPING_NAME} 
@@ -103,7 +103,7 @@ class Consumable(Database.DatabaseEntity):
         self.handler.get_db().commit()
         # Logging
         if do_log:
-           logging.getLogger(__name__).info(f"REMOVE_TAG#{self.id},'{tag}'")
+            logging.getLogger(__name__).info(f"REMOVE_TAG#{self.id},'{tag}'")
         return True
 
     def get_personnel(self) -> Sequence[pers.Personnel]:
@@ -130,7 +130,7 @@ class Consumable(Database.DatabaseEntity):
             )
         return personnel
 
-    def add_personnel(self, personnel: pers.Personnel, do_log : bool = True) -> bool:
+    def add_personnel(self, personnel: pers.Personnel, do_log: bool = True) -> bool:
         if self.id is None:
             raise ValueError("Cannot assign Personnel to Consumable without ID.")
         if personnel.id is None:
@@ -145,10 +145,12 @@ class Consumable(Database.DatabaseEntity):
         self.handler.get_db().commit()
         # Logging
         if do_log:
-           logging.getLogger(__name__).info(f"ADD_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'")
+            logging.getLogger(__name__).info(
+                f"ADD_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'"
+            )
         return True
 
-    def remove_personnel(self, personnel: pers.Personnel, do_log : bool = True) -> bool:
+    def remove_personnel(self, personnel: pers.Personnel, do_log: bool = True) -> bool:
         if self.id is None:
             raise ValueError("Cannot remove Personnel from Consumable without ID.")
         if personnel.id is None:
@@ -164,7 +166,9 @@ class Consumable(Database.DatabaseEntity):
         self.handler.get_db().commit()
         # Logging
         if do_log:
-           logging.getLogger(__name__).info(f"REMOVE_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'")
+            logging.getLogger(__name__).info(
+                f"REMOVE_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'"
+            )
         return True
 
     @classmethod
@@ -237,7 +241,7 @@ class Consumable(Database.DatabaseEntity):
         return sql
 
     @classmethod
-    def new(cls, do_log : bool = True, **kwargs) -> Consumable:
+    def new(cls, do_log: bool = True, **kwargs) -> Consumable:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         consumable = Consumable(**kwargs)
@@ -250,7 +254,7 @@ class Consumable(Database.DatabaseEntity):
         consumable.id = cur.lastrowid
         # Logging
         if do_log:
-           logging.getLogger(__name__).info(f"NEW_CONSUMABLE#{consumable._csv_str()}")
+            logging.getLogger(__name__).info(f"NEW_CONSUMABLE#{consumable._csv_str()}")
         return consumable
 
     @classmethod
@@ -290,13 +294,16 @@ class Consumable(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any], do_log : bool = True
+        cls,
+        where_map: Mapping[str, Any],
+        set_map: Mapping[str, Any],
+        do_log: bool = True,
     ) -> Sequence[Consumable]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        old_consumables = {c.id : c for c in cls.find(**where_map.copy())}
+        old_consumables = {c.id: c for c in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         if "tags" in where_map:
             values = where_map["tags"]
@@ -344,13 +351,15 @@ class Consumable(Database.DatabaseEntity):
             # Logging
             if do_log:
                 old_consumable = old_consumables.get(new_consumable.id)
-                logging.getLogger(__name__).info(f"UPDATE_CONSUMABLE#{old_consumable._csv_str()}#{new_consumable._csv_str()}")
+                logging.getLogger(__name__).info(
+                    f"UPDATE_CONSUMABLE#{old_consumable._csv_str()}#{new_consumable._csv_str()}"
+                )
         return consumables
 
     @classmethod
-    def delete(cls, do_log : bool = True, **kwargs) -> bool:
+    def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
-        old_consumables = {c.id : c for c in cls.find(**kwargs.copy())}
+        old_consumables = {c.id: c for c in cls.find(**kwargs.copy())}
         cur = cls.handler.get_db().cursor()
         where = ["true"]
         if "tags" in where:
@@ -398,7 +407,7 @@ class Consumable(Database.DatabaseEntity):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
-    
+
     def _csv_str(self) -> str:
         return f"{self.id},{self.series_id},'{self.name}','{self.type}',{self.status.value},{self.parts},{self.max_parts},{self.completions},{self.rating},{self.start_date},{self.end_date}"
 

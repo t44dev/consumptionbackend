@@ -35,7 +35,7 @@ class Series(Database.DatabaseEntity):
         return Series(id=seq[0], name=seq[1])
 
     @classmethod
-    def new(cls, do_log : bool = True, **kwargs) -> Series:
+    def new(cls, do_log: bool = True, **kwargs) -> Series:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         series = Series(**kwargs)
@@ -75,13 +75,16 @@ class Series(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any], do_log : bool = True
+        cls,
+        where_map: Mapping[str, Any],
+        set_map: Mapping[str, Any],
+        do_log: bool = True,
     ) -> Sequence[Series]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
-        old_series = {s.id : s for s in cls.find(**where_map.copy())}
+        old_series = {s.id: s for s in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         values = []
 
@@ -108,11 +111,13 @@ class Series(Database.DatabaseEntity):
             new_ser = cls._seq_to_series(row)
             series.append(new_ser)
             if do_log:
-                logging.getLogger(__name__).info(f"UPDATE_SERIES#{old_series.get(new_ser.id)._csv_str()}#{new_ser._csv_str()}")
+                logging.getLogger(__name__).info(
+                    f"UPDATE_SERIES#{old_series.get(new_ser.id)._csv_str()}#{new_ser._csv_str()}"
+                )
         return series
 
     @classmethod
-    def delete(cls, do_log : bool = True, **kwargs) -> bool:
+    def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
         old_series = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()
