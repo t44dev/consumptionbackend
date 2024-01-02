@@ -425,3 +425,11 @@ class Consumable(Database.DatabaseEntity):
             and self.start_date == other.start_date
             and self.end_date == other.end_date
         )
+
+
+def average_rating(consumables: Sequence[Consumable]) -> float:
+    ratings = [c.rating for c in consumables if c.rating is not None]
+    if len(ratings) == 0:
+        return 0.0
+    else:
+        return sum(ratings) / len(ratings)

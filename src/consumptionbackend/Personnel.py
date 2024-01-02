@@ -32,7 +32,7 @@ class Personnel(Database.DatabaseEntity):
             raise ValueError("Cannot find Consumables for Personnel without ID.")
         cur = self.handler.get_db().cursor()
         sql = f"""SELECT * FROM {cons.Consumable.DB_NAME}
-                    WHERE consumable_id IN
+                    WHERE id IN
                         (
                             SELECT DISTINCT consumable_id
                             FROM {cons.Consumable.DB_PERSONNEL_MAPPING_NAME}
@@ -203,4 +203,11 @@ class Personnel(Database.DatabaseEntity):
             and self.first_name == other.first_name
             and self.last_name == other.last_name
             and self.pseudonym == other.pseudonym
+            and self.role == other.role
         )
+
+    def __eq__(self, other: Personnel) -> bool:
+        return super().__eq__(other) and self.role == other.role
+
+    def __hash__(self) -> int:
+        return hash(hash(super().__hash__()) + 13 * hash(self.role))

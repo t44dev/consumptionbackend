@@ -19,7 +19,7 @@ class Series(Database.DatabaseEntity):
     def get_consumables(self) -> Sequence[cons.Consumable]:
         if self.id is None:
             raise ValueError("Cannot find Consumables for Series without ID.")
-        return cons.Consumable.find({"series_id": self.id})
+        return cons.Consumable.find(series_id=self.id)
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
