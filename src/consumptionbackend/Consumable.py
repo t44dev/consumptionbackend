@@ -359,7 +359,7 @@ class Consumable(Database.DatabaseEntity):
     @classmethod
     def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
-        old_consumables = {c.id: c for c in cls.find(**kwargs.copy())}
+        old_consumables = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()
         where = ["true"]
         if "tags" in where:
