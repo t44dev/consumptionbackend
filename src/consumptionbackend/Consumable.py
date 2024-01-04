@@ -405,8 +405,11 @@ class Consumable(Database.DatabaseEntity):
             raise ValueError("Cannot delete Consumable that does not have an ID.")
         return self.delete(id=self.id)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
+    
+    def __str__(self) -> str:
+        return f"[{self.type}] {self.name}"
 
     def _csv_str(self) -> str:
         return f"{self.id},{self.series_id},'{self.name}','{self.type}',{self.status.value},{self.parts},{self.max_parts},{self.completions},{self.rating},{self.start_date},{self.end_date}"
