@@ -1,5 +1,6 @@
 # General Imports
 from __future__ import annotations
+import logging
 from collections.abc import Mapping, Sequence
 from typing import Union, Any
 
@@ -18,7 +19,7 @@ class Series(Database.DatabaseEntity):
     def get_consumables(self) -> Sequence[cons.Consumable]:
         if self.id is None:
             raise ValueError("Cannot find Consumables for Series without ID.")
-        return cons.Consumable.find({"series_id": self.id})
+        return cons.Consumable.find(series_id=self.id)
 
     @classmethod
     def _assert_attrs(cls, d: Mapping[str, Any]) -> None:
@@ -34,7 +35,7 @@ class Series(Database.DatabaseEntity):
         return Series(id=seq[0], name=seq[1])
 
     @classmethod
-    def new(cls, **kwargs) -> Series:
+    def new(cls, do_log: bool = True, **kwargs) -> Series:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         series = Series(**kwargs)
@@ -46,6 +47,8 @@ class Series(Database.DatabaseEntity):
         cur.execute(sql, [series.id, series.name])
         cls.handler.get_db().commit()
         series.id = cur.lastrowid
+        if do_log:
+            logging.getLogger(__name__).info(f"NEW_SERIES#{series._csv_str()}")
         return series
 
     @classmethod
@@ -72,12 +75,16 @@ class Series(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+        cls,
+        where_map: Mapping[str, Any],
+        set_map: Mapping[str, Any],
+        do_log: bool = True,
     ) -> Sequence[Series]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
+        old_series = {s.id: s for s in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         values = []
 
@@ -101,12 +108,18 @@ class Series(Database.DatabaseEntity):
         cls.handler.get_db().commit()
         series = []
         for row in rows:
-            series.append(cls._seq_to_series(row))
+            new_ser = cls._seq_to_series(row)
+            series.append(new_ser)
+            if do_log:
+                logging.getLogger(__name__).info(
+                    f"UPDATE_SERIES#{old_series.get(new_ser.id)._csv_str()}#{new_ser._csv_str()}"
+                )
         return series
 
     @classmethod
-    def delete(cls, **kwargs) -> bool:
+    def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
+        old_series = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()
         where = ["true"]
         values = []
@@ -121,6 +134,10 @@ class Series(Database.DatabaseEntity):
         sql = f"DELETE FROM {cls.DB_NAME} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
         cls.handler.get_db().commit()
+        if do_log:
+            logger = logging.getLogger(__name__)
+            for ser in old_series:
+                logger.info(f"DELETE_SERIES#{ser._csv_str()}")
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Series:
@@ -135,8 +152,14 @@ class Series(Database.DatabaseEntity):
             raise ValueError("Cannot delete Series that does not have an ID.")
         return self.delete(id=self.id)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
+
+    def __str__(self) -> str:
+        return self.name
+
+    def _csv_str(self) -> str:
+        return f"{self.id},'{self.name}'"
 
     def _precise_eq(self, other: Series) -> bool:
         return super().__eq__(other) and self.name == other.name

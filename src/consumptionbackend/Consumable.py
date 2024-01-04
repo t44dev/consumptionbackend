@@ -1,5 +1,6 @@
 # General Imports
 from __future__ import annotations
+import logging
 from typing import Union, Any
 from datetime import datetime
 from collections.abc import Sequence, Mapping
@@ -67,8 +68,11 @@ class Consumable(Database.DatabaseEntity):
     def get_series(self) -> ser.Series:
         return ser.Series.find(id=self.series_id)[0]
 
-    def set_series(self, series: ser.Series) -> bool:
-        self.update({"id": self.id}, {"series_id": series.id})
+    def set_series(self, series: ser.Series, do_log: bool = True) -> bool:
+        self.update({"id": self.id}, {"series_id": series.id}, do_log=False)
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(f"SET_SERIES#{self.id},{series.id}")
 
     def get_tags(self) -> Sequence[str]:
         cur = self.handler.get_db().cursor()
@@ -77,7 +81,7 @@ class Consumable(Database.DatabaseEntity):
         cur.execute(sql, [self.id])
         return list(map(lambda x: x[0], cur.fetchall()))
 
-    def add_tag(self, tag: str) -> bool:
+    def add_tag(self, tag: str, do_log: bool = True) -> bool:
         tag = tag.strip().lower()
         if tag in self.get_tags():
             return False
@@ -85,15 +89,21 @@ class Consumable(Database.DatabaseEntity):
         sql = f"INSERT INTO {Consumable.DB_TAG_MAPPING_NAME} (consumable_id, tag) values (?,?)"
         cur.execute(sql, [self.id, tag])
         self.handler.get_db().commit()
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(f"ADD_TAG#{self.id},'{tag}'")
         return True
 
-    def remove_tag(self, tag: str) -> bool:
+    def remove_tag(self, tag: str, do_log: bool = True) -> bool:
         tag = tag.strip().lower()
         cur = self.handler.get_db().cursor()
         sql = f"""DELETE FROM {Consumable.DB_TAG_MAPPING_NAME} 
                 WHERE consumable_id = ? AND tag = ?"""
         cur.execute(sql, [self.id, tag])
         self.handler.get_db().commit()
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(f"REMOVE_TAG#{self.id},'{tag}'")
         return True
 
     def get_personnel(self) -> Sequence[pers.Personnel]:
@@ -120,7 +130,7 @@ class Consumable(Database.DatabaseEntity):
             )
         return personnel
 
-    def add_personnel(self, personnel: pers.Personnel) -> bool:
+    def add_personnel(self, personnel: pers.Personnel, do_log: bool = True) -> bool:
         if self.id is None:
             raise ValueError("Cannot assign Personnel to Consumable without ID.")
         if personnel.id is None:
@@ -133,9 +143,14 @@ class Consumable(Database.DatabaseEntity):
         sql = f"INSERT INTO {self.DB_PERSONNEL_MAPPING_NAME} (personnel_id, consumable_id, role) VALUES (?,?,?)"
         cur.execute(sql, [personnel.id, self.id, personnel.role])
         self.handler.get_db().commit()
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(
+                f"ADD_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'"
+            )
         return True
 
-    def remove_personnel(self, personnel: pers.Personnel) -> bool:
+    def remove_personnel(self, personnel: pers.Personnel, do_log: bool = True) -> bool:
         if self.id is None:
             raise ValueError("Cannot remove Personnel from Consumable without ID.")
         if personnel.id is None:
@@ -149,6 +164,11 @@ class Consumable(Database.DatabaseEntity):
                 WHERE personnel_id = ? AND consumable_id = ? AND role = ?"""
         cur.execute(sql, [personnel.id, self.id, personnel.role])
         self.handler.get_db().commit()
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(
+                f"REMOVE_PERSONNEL#{self.id},{personnel.id},'{personnel.role}'"
+            )
         return True
 
     @classmethod
@@ -211,14 +231,17 @@ class Consumable(Database.DatabaseEntity):
         templating = ",".join(["?" for _ in tags])
         sql = f"""SELECT * FROM {Consumable.DB_NAME} 
             WHERE id IN 
-                (SELECT DISTINCT consumable_id 
+                (SELECT consumable_id 
                     FROM {Consumable.DB_TAG_MAPPING_NAME} 
-                    WHERE tag IN ({templating}))
+                    WHERE tag IN ({templating})
+                    GROUP BY consumable_id
+                    HAVING COUNT(*) = {len(tags)}
+                )
             """
         return sql
 
     @classmethod
-    def new(cls, **kwargs) -> Consumable:
+    def new(cls, do_log: bool = True, **kwargs) -> Consumable:
         cls._assert_attrs(kwargs)
         cur = cls.handler.get_db().cursor()
         consumable = Consumable(**kwargs)
@@ -229,6 +252,9 @@ class Consumable(Database.DatabaseEntity):
         cur.execute(sql, cls._consumable_to_seq(consumable))
         cls.handler.get_db().commit()
         consumable.id = cur.lastrowid
+        # Logging
+        if do_log:
+            logging.getLogger(__name__).info(f"NEW_CONSUMABLE#{consumable._csv_str()}")
         return consumable
 
     @classmethod
@@ -268,12 +294,16 @@ class Consumable(Database.DatabaseEntity):
 
     @classmethod
     def update(
-        cls, where_map: Mapping[str, Any], set_map: Mapping[str, Any]
+        cls,
+        where_map: Mapping[str, Any],
+        set_map: Mapping[str, Any],
+        do_log: bool = True,
     ) -> Sequence[Consumable]:
         if len(set_map) == 0:
             raise ValueError("Set map cannot be empty.")
         cls._assert_attrs(where_map)
         cls._assert_attrs(set_map)
+        old_consumables = {c.id: c for c in cls.find(**where_map.copy())}
         cur = cls.handler.get_db().cursor()
         if "tags" in where_map:
             values = where_map["tags"]
@@ -316,12 +346,20 @@ class Consumable(Database.DatabaseEntity):
         cls.handler.get_db().commit()
         consumables = []
         for row in rows:
-            consumables.append(cls._seq_to_consumable(row))
+            new_consumable = cls._seq_to_consumable(row)
+            consumables.append(new_consumable)
+            # Logging
+            if do_log:
+                old_consumable = old_consumables.get(new_consumable.id)
+                logging.getLogger(__name__).info(
+                    f"UPDATE_CONSUMABLE#{old_consumable._csv_str()}#{new_consumable._csv_str()}"
+                )
         return consumables
 
     @classmethod
-    def delete(cls, **kwargs) -> bool:
+    def delete(cls, do_log: bool = True, **kwargs) -> bool:
         cls._assert_attrs(kwargs)
+        old_consumables = cls.find(**kwargs.copy())
         cur = cls.handler.get_db().cursor()
         where = ["true"]
         if "tags" in where:
@@ -349,6 +387,10 @@ class Consumable(Database.DatabaseEntity):
         sql = f"DELETE FROM {db_name} WHERE {' AND '.join(where)}"
         cur.execute(sql, values)
         cls.handler.get_db().commit()
+        if do_log:
+            logger = logging.getLogger(__name__)
+            for consumable in old_consumables:
+                logger.info(f"DELETE_CONSUMABLE#{consumable._csv_str()}")
         return True
 
     def update_self(self, set_map: Mapping[str, Any]) -> Consumable:
@@ -363,8 +405,14 @@ class Consumable(Database.DatabaseEntity):
             raise ValueError("Cannot delete Consumable that does not have an ID.")
         return self.delete(id=self.id)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
+
+    def __str__(self) -> str:
+        return f"[{self.type}] {self.name}"
+
+    def _csv_str(self) -> str:
+        return f"{self.id},{self.series_id},'{self.name}','{self.type}',{self.status.value},{self.parts},{self.max_parts},{self.completions},{self.rating},{self.start_date},{self.end_date}"
 
     def _precise_eq(self, other: Consumable) -> bool:
         return (
@@ -380,3 +428,11 @@ class Consumable(Database.DatabaseEntity):
             and self.start_date == other.start_date
             and self.end_date == other.end_date
         )
+
+
+def average_rating(consumables: Sequence[Consumable]) -> float:
+    ratings = [c.rating for c in consumables if c.rating is not None]
+    if len(ratings) == 0:
+        return 0.0
+    else:
+        return sum(ratings) / len(ratings)

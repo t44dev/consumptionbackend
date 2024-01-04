@@ -4,7 +4,13 @@ from .Database import DatabaseInstantiator, DatabaseHandler
 
 def update():
     config = get_config()
-    if "version" not in config or config["version"] != "2.0.0":
+    version = config.get("version", "0.0.0").split(".")
+    if version != ["2", "1", "0"]:
+        # Update Config
+        config["version"] = "2.1.0"
+        write_config(config)
+
+    if version[0] == "1":
         # Update Existing DB
         cur = DatabaseHandler.get_db().cursor()
         script = """
@@ -24,6 +30,3 @@ def update():
             DROP TABLE staff;
         """
         cur.executescript(script2)
-        # Update Config
-        config["version"] = "2.0.0"
-        write_config(config)

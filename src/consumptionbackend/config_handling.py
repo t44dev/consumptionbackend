@@ -3,7 +3,7 @@ from pathlib import Path
 from collections.abc import Mapping
 import json
 
-DEFAULT_CONFIG = {"DB_PATH": "~/.consumption/consumption.db", "version": "2.0.0"}
+DEFAULT_CONFIG = {"DB_PATH": "~/.consumption/consumption.db", "version": "2.1.0"}
 
 CONSUMPTION_PATH = Path.home() / ".consumption"
 CONFIG_PATH = CONSUMPTION_PATH / "config.json"
