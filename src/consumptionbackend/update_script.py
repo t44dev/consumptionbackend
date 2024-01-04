@@ -4,7 +4,7 @@ from .Database import DatabaseInstantiator, DatabaseHandler
 
 def update():
     config = get_config()
-    version = getattr(config, "version", "0.0.0").split(".")
+    version = config.get("version", "0.0.0").split(".")
     if version != ["2", "1", "0"]:
         # Update Config
         config["version"] = "2.1.0"
