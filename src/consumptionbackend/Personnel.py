@@ -192,10 +192,14 @@ class Personnel(Database.DatabaseEntity):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} | {self.first_name} {self.last_name} with ID: {self.id}"
-    
+
     def __str__(self) -> str:
         psuedonym = f'"{self.pseudonym}"' if self.pseudonym is not None else None
-        name = " ".join(filter(lambda x : x is not None, [self.first_name, psuedonym, self.last_name]))
+        name = " ".join(
+            filter(
+                lambda x: x is not None, [self.first_name, psuedonym, self.last_name]
+            )
+        )
         role = f"[{self.role}] " if self.role is not None else None
         return f"{role}{name}"
 

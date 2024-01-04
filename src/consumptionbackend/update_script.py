@@ -9,7 +9,7 @@ def update():
         # Update Config
         config["version"] = "2.1.0"
         write_config(config)
-    
+
     if version[0] == "1":
         # Update Existing DB
         cur = DatabaseHandler.get_db().cursor()

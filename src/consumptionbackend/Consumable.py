@@ -407,7 +407,7 @@ class Consumable(Database.DatabaseEntity):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} | {self.name} with ID: {self.id}"
-    
+
     def __str__(self) -> str:
         return f"[{self.type}] {self.name}"
 
