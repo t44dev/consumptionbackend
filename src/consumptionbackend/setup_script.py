@@ -5,13 +5,6 @@ import logging
 
 
 def setup():
-    # Logging
-    logging.basicConfig(
-        filename=CONSUMPTION_PATH / "consumption.log",
-        encoding="utf-8",
-        level=logging.DEBUG,
-        format="%(asctime)s#%(name)s#%(levelname)s#%(message)s",
-    )
     # Additional Setup
     if setup_config():
         # First Time Setup
@@ -19,3 +12,10 @@ def setup():
     else:
         # Config exists, check for potential updates
         update()
+    # Logging
+    logging.basicConfig(
+        filename=CONSUMPTION_PATH / "consumption.log",
+        encoding="utf-8",
+        level=logging.DEBUG,
+        format="%(asctime)s#%(name)s#%(levelname)s#%(message)s",
+    )
