@@ -200,7 +200,7 @@ class Personnel(Database.DatabaseEntity):
                 lambda x: x is not None, [self.first_name, psuedonym, self.last_name]
             )
         )
-        role = f"[{self.role}] " if self.role is not None else None
+        role = f"[{self.role}] " if self.role is not None else "" 
         return f"{role}{name}"
 
     def _csv_str(self) -> str:
