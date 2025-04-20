@@ -94,3 +94,14 @@ class PersonnelWhereMapping(BaseWhereMapping, total=False):
     last_name: WhereQuery[str]
     pseudonym: WhereQuery[str]
     role: WhereQuery[str]
+
+# Tag
+
+class TagFieldsRequired(TypedDict):
+    consumable_id : int
+    tag : str
+
+
+class TagWhereMapping(TypedDict):
+    consumable_id : int
+    tag : str

@@ -19,12 +19,13 @@ class ApplyQuery(Generic[T]):
 
 
 class WhereOperator(Enum):
-    EQUAL = 0
-    GT = 1
-    GTE = 2
-    LT = 3
-    LTE = 4
-    LIKE = 5
+    EQ = 0
+    NEQ = 1
+    GT = 2
+    GTE = 3
+    LT = 4
+    LTE = 5
+    LIKE = 6
 
 
 @dataclass

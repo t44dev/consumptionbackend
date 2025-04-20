@@ -4,22 +4,27 @@ from typing import Any, TypeVar, TypedDict, Unpack
 from collections.abc import Sequence, Mapping
 
 # consumption
-from consumptionbackend.database.fields import ConsumableWhereMapping
+from consumptionbackend.database.fields import (
+    ConsumableWhereMapping,
+    PersonnelWhereMapping,
+    SeriesWhereMapping,
+    TagWhereMapping,
+)
 from consumptionbackend.database.queries import ApplyQuery
 from consumptionbackend.entities import EntityBase
 from consumptionbackend.utils import Singleton
 
 E = TypeVar("E", bound=EntityBase)
-V = TypeVar("V")
 
 
 class WhereMapping(TypedDict, total=False):
     consumable: ConsumableWhereMapping
-    series: ConsumableWhereMapping
-    personnel: ConsumableWhereMapping
+    series: SeriesWhereMapping
+    personnel: PersonnelWhereMapping
+    tag: TagWhereMapping
 
 
-class DatabaseHandlerBase(ABC, Singleton):
+class DatabaseHandlerBase(metaclass=Singleton):
 
     @abstractmethod
     def new(self, t: type[E], **values: Mapping[str, Any]) -> E:
@@ -38,7 +43,7 @@ class DatabaseHandlerBase(ABC, Singleton):
         self,
         t: type[E],
         where: WhereMapping,
-        apply: Mapping[str, ApplyQuery[V]],
+        apply: Mapping[str, ApplyQuery[Any]],
     ) -> Sequence[E]:
         pass
 
