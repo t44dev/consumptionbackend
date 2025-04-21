@@ -24,8 +24,8 @@ CREATE TABLE consumables (
     id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
     series_id INTEGER NOT NULL DEFAULT - 1,
     name TEXT NOT NULL,
-    TYPE TEXT NOT NULL,
-    STATUS INTEGER NOT NULL DEFAULT 0,
+    type TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
     parts INTEGER NOT NULL DEFAULT 0,
     max_parts INTEGER DEFAULT NULL,
     completions INTEGER NOT NULL DEFAULT 0,
@@ -156,6 +156,30 @@ BEGIN
     SET
         parts = max(NEW.parts, NEW.max_parts, 1),
         max_parts = max(NEW.parts, NEW.max_parts, 1)
+    WHERE
+        id = NEW.id;
+END;
+
+CREATE TRIGGER upper_type_upadte
+    AFTER UPDATE ON consumables FOR EACH ROW
+    WHEN NEW.type != OLD.type
+BEGIN
+    UPDATE
+        consumables
+    SET
+        type = upper(NEW.type),
+    WHERE
+        id = NEW.id;
+END;
+
+CREATE TRIGGER upper_type_insert
+    AFTER INSERT ON consumables
+    WHEN NEW.type != OLD.type
+BEGIN
+    UPDATE
+        consumables
+    SET
+        type = upper(NEW.type),
     WHERE
         id = NEW.id;
 END;

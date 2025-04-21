@@ -1,6 +1,6 @@
 # stdlib
 from abc import abstractmethod, ABC
-from typing import Any, TypeVar, TypedDict, Unpack
+from typing import Any, TypeAlias, TypeVar, TypedDict, Unpack
 from collections.abc import Sequence, Mapping
 
 # consumption
@@ -12,19 +12,23 @@ from consumptionbackend.database.fields import (
 )
 from consumptionbackend.database.queries import ApplyQuery
 from consumptionbackend.entities import EntityBase
-from consumptionbackend.utils import Singleton
+from consumptionbackend.utils import AbstractSingleton
 
 E = TypeVar("E", bound=EntityBase)
 
 
+# TODO: These keys are the same as the SQLite table names... too coupled?
 class WhereMapping(TypedDict, total=False):
-    consumable: ConsumableWhereMapping
+    consumables: ConsumableWhereMapping
     series: SeriesWhereMapping
     personnel: PersonnelWhereMapping
-    tag: TagWhereMapping
+    consumable_tags: TagWhereMapping
 
 
-class DatabaseHandlerBase(metaclass=Singleton):
+ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
+
+
+class DatabaseHandlerBase(ABC, metaclass=AbstractSingleton):
 
     @abstractmethod
     def new(self, t: type[E], **values: Mapping[str, Any]) -> E:

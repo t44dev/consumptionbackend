@@ -31,4 +31,4 @@ class WhereOperator(Enum):
 @dataclass
 class WhereQuery(Generic[T]):
     value: T
-    operator: ApplyOperator
+    operator: WhereOperator

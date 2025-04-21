@@ -1,16 +1,13 @@
 # stdlib
 import json
 from pathlib import Path
-from typing import TypeAlias, TypedDict, final
+from typing import Any, TypedDict, final
 
 # 3rd party
 from platformdirs import user_config_path, user_data_path
 
 # consumption
 from consumptionbackend.utils import Singleton
-
-JSONPrimitive: TypeAlias = str | int | float | bool | None
-JSONType: TypeAlias = JSONPrimitive | list["JSONType"] | dict[str, "JSONType"]
 
 
 class ConfigDict(TypedDict):
@@ -49,8 +46,8 @@ class ConsumptionConfig(metaclass=Singleton):
         with open(ConsumptionConfig.CONFIG_FILE_PATH, "r") as config_file:
             self._config: ConfigDict = json.load(config_file)
 
-    def __getitem__(self, key: str, value: JSONType) -> JSONType:
+    def __getitem__(self, key: str) -> Any:
         return self._config[key]  # pyright:ignore[reportUnknownVariableType]
 
-    def __setitem__(self, key: str, value: JSONType):
+    def __setitem__(self, key: str, value: Any):
         self._config[key] = value

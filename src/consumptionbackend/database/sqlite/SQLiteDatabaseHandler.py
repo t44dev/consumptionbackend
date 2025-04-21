@@ -7,9 +7,20 @@ import sqlite3
 from typing import Any, TypeVar, Unpack, final
 
 # consumption
+from consumptionbackend.database.sqlite.sql_helpers import (
+    SQLiteType,
+    to_shorthand,
+    to_sqlite_operator,
+    validate_column_name,
+)
+from consumptionbackend.entities import Consumable, Series, Personnel
 from consumptionbackend.config.config import ConsumptionConfig
-from consumptionbackend.database.base_handlers import DatabaseHandlerBase, WhereMapping
-from consumptionbackend.database.queries import ApplyQuery
+from consumptionbackend.database.base_handlers import (
+    ApplyMapping,
+    DatabaseHandlerBase,
+    WhereMapping,
+)
+from consumptionbackend.database.queries import ApplyQuery, WhereQuery
 from consumptionbackend.entities import EntityBase
 
 E = TypeVar("E", bound=EntityBase)
@@ -18,29 +29,166 @@ E = TypeVar("E", bound=EntityBase)
 @final
 class SQLiteDatabaseHandler(DatabaseHandlerBase):
 
+    TABLE_MAPPING = {
+        EntityBase: "no_table",
+        Consumable: "consumables",
+        Series: "series",
+        Personnel: "personnel",
+    }
+
+    TAGS_MAPPING_TABLE = "consumable_tags"
+    PERSONNEL_MAPPING_TABLE = "consumable_personnel"
+
+    # TODO: Don't do this probably
+    MEGATABLE_QUERY = f"""
+    {TABLE_MAPPING[Consumable]} {to_shorthand(TABLE_MAPPING[Consumable])} 
+        JOIN {TABLE_MAPPING[Series]} {to_shorthand(TABLE_MAPPING[Series])}
+            ON {to_shorthand(TABLE_MAPPING[Consumable])}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
+        JOIN {TAGS_MAPPING_TABLE} {to_shorthand(TAGS_MAPPING_TABLE)}
+            ON {to_shorthand(TAGS_MAPPING_TABLE)}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
+        JOIN {PERSONNEL_MAPPING_TABLE} {to_shorthand(PERSONNEL_MAPPING_TABLE)}
+            ON {to_shorthand(PERSONNEL_MAPPING_TABLE)}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
+        JOIN {TABLE_MAPPING[Personnel]} {to_shorthand(TABLE_MAPPING[Personnel])}
+            ON {to_shorthand(TABLE_MAPPING[Personnel])}.id = {PERSONNEL_MAPPING_TABLE}.personnel_id
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.db: sqlite3.Connection = SQLiteDatabaseHandler.setup()
+        self.db.row_factory = sqlite3.Row
 
-    def new(self, t: type[E], **values: Mapping[str, Any]) -> E:
-        pass
+    def new(self, t: type[E], **values: SQLiteType) -> E:
+        cur = self.db.cursor()
+
+        row = cur.execute(*(self._new_sql(t, **values))).lastrowid
+
+        if row is None:
+            raise RuntimeError("No row id after insertion.")
+
+        self.db.commit()
+        cur.close()
+        return self.find_by_id(t, row)
+
+    def _new_sql(
+        self, t: type[E], **values: SQLiteType
+    ) -> tuple[str, Mapping[str, SQLiteType]]:
+        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+        placeholders = ", ".join(["?" for _ in range(len(values))])
+        labels: list[str] = []
+        for key in values:
+            validate_column_name(key)
+            labels.append(f":{key}")
+        labels_str = ", ".join(labels)
+
+        sql = f"INSERT INTO {table} ({labels_str}) VALUES ({placeholders})"
+
+        return sql, values
 
     def find_by_id(self, t: type[E], id: int) -> E:
-        pass
+        cur = self.db.cursor()
+
+        result: sqlite3.Row | None = cur.execute(
+            *(self._find_by_id_sql(t, id))
+        ).fetchone()
+
+        if result is None:
+            raise RuntimeError("No result on find by id.")
+
+        cur.close()
+        return t(**result)
+
+    def _find_by_id_sql(
+        self, t: type[E], id: int
+    ) -> tuple[str, Mapping[str, SQLiteType]]:
+        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+
+        return f"SELECT * FROM {table} WHERE id = :id", {"id": id}
 
     def find(self, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
-        pass
+        cur = self.db.cursor()
+
+        results: list[sqlite3.Row] = cur.execute(
+            *(self._find_sql(t, **where))
+        ).fetchall()
+
+        self.db.commit()
+        cur.close()
+        return list(map(lambda result: t(**result), results))
+
+    def _find_sql(
+        self, t: type[E], **where: Unpack[WhereMapping]
+    ) -> tuple[str, list[SQLiteType]]:
+        where_query, values = SQLiteDatabaseHandler.where_query(where)
+
+        sql = f"""
+        SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.* 
+            FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+            WHERE {where_query}
+        """
+
+        return sql, values
 
     def update(
         self,
         t: type[E],
         where: WhereMapping,
-        apply: Mapping[str, ApplyQuery[Any]],
+        apply: ApplyMapping,
     ) -> Sequence[E]:
-        pass
+        cur = self.db.cursor()
+
+        results: list[sqlite3.Row] = cur.execute(
+            *(self._update_sql(t, where, apply))
+        ).fetchall()
+
+        self.db.commit()
+        cur.close()
+        return list(map(lambda result: t(**result), results))
+
+    def _update_sql(
+        self,
+        t: type[E],
+        where: WhereMapping,
+        apply: ApplyMapping,
+    ) -> tuple[str, list[SQLiteType]]:
+        where_query, where_values = SQLiteDatabaseHandler.where_query(where)
+        apply_query, apply_values = SQLiteDatabaseHandler.apply_query(apply)
+
+        sql = f"""
+        UPDATE {SQLiteDatabaseHandler.TABLE_MAPPING[t]} t
+            SET {apply_query}
+            WHERE t.id IN (
+                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
+                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                WHERE {where_query}
+            )
+        RETURNING t.*
+        """
+
+        return sql, (apply_values + where_values)
 
     def delete(self, t: type[E], **where: Unpack[WhereMapping]) -> None:
-        pass
+        cur = self.db.cursor()
+
+        _ = cur.execute(*(self._delete_sql(t, **where)))
+
+        self.db.commit()
+        cur.close()
+
+    def _delete_sql(
+        self, t: type[E], **where: Unpack[WhereMapping]
+    ) -> tuple[str, list[SQLiteType]]:
+        where_query, values = SQLiteDatabaseHandler.where_query(where)
+
+        sql = f"""
+        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]} t
+            WHERE t.id IN (
+                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
+                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                WHERE {where_query}
+            )
+        """
+
+        return sql, values
 
     @classmethod
     def setup(cls) -> sqlite3.Connection:
@@ -57,6 +205,8 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         version = config["version"]
         if version != config.CURRENT_VERSION:
             SQLiteDatabaseHandler.migrate(conn, version, config.CURRENT_VERSION)
+            config["version"] = config.CURRENT_VERSION
+            config.write()
 
         return conn
 
@@ -64,6 +214,7 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
     def migrate(
         cls, conn: sqlite3.Connection, version_start: str | None, version_end: str
     ) -> None:
+        cur = conn.cursor()
 
         # TODO: Can this be made dynamic?
         migrations_dir = resources.files(
@@ -74,4 +225,41 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
             sorted(glob(str(migrations_dir / "v[0-9].[0-9].[0-9].sql"))),
         )
         for file in files:
-            _ = conn.executescript(file)
+            _ = cur.executescript(file)
+
+        cur.close()
+
+    @classmethod
+    def where_query(cls, where: WhereMapping) -> tuple[str, list[SQLiteType]]:
+        where_list: list[str] = []
+        values: list[SQLiteType] = []
+        for table_name in where:
+            mapping: Mapping[str, Any] = where.get(table_name, None)
+            assert mapping is not None
+
+            for column in mapping:
+                validate_column_name(column)
+
+                query: WhereQuery[Any] = mapping[column]
+                qualified_column = f"{to_shorthand(table_name)}.{column}"
+
+                where_str, sub_value = to_sqlite_operator(qualified_column, query)
+                where_list.append(where_str)
+                values.append(sub_value)
+
+        return " AND ".join(where_list), values
+
+    @classmethod
+    def apply_query(cls, apply: ApplyMapping) -> tuple[str, list[SQLiteType]]:
+        apply_list: list[str] = []
+        values: list[SQLiteType] = []
+        for column in apply:
+            validate_column_name(column)
+
+            query: ApplyQuery[Any] = apply[column]
+
+            apply_str, sub_value = to_sqlite_operator(column, query)
+            apply_list.append(apply_str)
+            values.append(sub_value)
+
+        return ", ".join(apply_list), values
