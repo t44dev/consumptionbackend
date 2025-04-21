@@ -7,25 +7,32 @@ exclude = [
   "/tests"
 ]
 
+[tool.basedpyright]
+reportAny = false
+reportExplicitAny = false
+reportImplicitOverride = false
+
 [project]
 name = "consumptionbackend"
-version = "2.1.1"
+version = "3.0.0"
 authors = [
   { name="track-44", email="trackfortyfour@proton.me" },
 ]
-description = "The backend SQLite3 database manager for the ConsumptionCLI tool."
+description = "The backend (SQLite) database manager for the ConsumptionCLI tool."
 readme = "README.md"
 license-files = { paths = ["LICENSE"] }
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
     "Programming Language :: SQL",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
-dependencies = []
+dependencies = [
+    "platformdirs>=4.*.*"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/track-44/consumptionbackend"
