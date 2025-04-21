@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import NotRequired, TypedDict
 
 # consumption
-from consumptionbackend.database.queries import ApplyQuery, WhereQuery
+from .queries import ApplyQuery, WhereQuery
 from consumptionbackend.entities import Status
 
 # Base

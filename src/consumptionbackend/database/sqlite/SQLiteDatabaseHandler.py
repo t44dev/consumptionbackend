@@ -7,20 +7,22 @@ import sqlite3
 from typing import Any, TypeVar, Unpack, final
 
 # consumption
-from consumptionbackend.database.sqlite.sql_helpers import (
+from .sql_helpers import (
     SQLiteType,
     to_shorthand,
     to_sqlite_operator,
     validate_column_name,
 )
 from consumptionbackend.entities import Consumable, Series, Personnel
-from consumptionbackend.config.config import ConsumptionConfig
-from consumptionbackend.database.base_handlers import (
+from consumptionbackend.config import ConsumptionConfig
+from consumptionbackend.database import (
     ApplyMapping,
     DatabaseHandlerBase,
     WhereMapping,
+    ApplyQuery,
+    WhereOperator,
+    WhereQuery,
 )
-from consumptionbackend.database.queries import ApplyQuery, WhereOperator, WhereQuery
 from consumptionbackend.entities import EntityBase
 
 E = TypeVar("E", bound=EntityBase)
@@ -152,14 +154,14 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         apply_query, apply_values = SQLiteDatabaseHandler.apply_query(apply)
 
         sql = f"""
-        UPDATE {SQLiteDatabaseHandler.TABLE_MAPPING[t]} t
+        UPDATE {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
             SET {apply_query}
-            WHERE t.id IN (
+            WHERE id IN (
                 SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
                 WHERE {where_query}
             )
-        RETURNING t.*
+        RETURNING *
         """
 
         return sql, (apply_values + where_values)
@@ -242,7 +244,7 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
                 qualified_column = f"{to_shorthand(table_name)}.{column}"
 
                 # Tags are a unique case
-                if column is "tag":
+                if column == "tag":
                     tag_where, tag_values = cls.where_query_tags(queries)
                     where_list.append(tag_where)
                     values = values + tag_values
@@ -276,16 +278,16 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         tags_where: list[str] = []
         if len(eq_tags) > 0:
             tags_where.append(
-                f"{tag_shorthand}.tag IN {' '.join('?' for _ in range(len(eq_tags)))}"
+                f"{tag_shorthand}.tag IN ({' '.join('?' for _ in range(len(eq_tags)))})"
             )
         if len(neq_tags) > 0:
             tags_where.append(
-                f"{tag_shorthand}.tag NOT IN {' '.join('?' for _ in range(len(neq_tags)))}"
+                f"{tag_shorthand}.tag NOT IN ({' '.join('?' for _ in range(len(neq_tags)))})"
             )
 
         tag_where = f"""
             {to_shorthand(cls.TABLE_MAPPING[Consumable])}.id IN (
-                SELECT tgw.consumable_id FROM {cls.TAGS_MAPPING_TABLE}
+                SELECT {tag_shorthand}.consumable_id FROM {cls.TAGS_MAPPING_TABLE} {tag_shorthand}
                 WHERE {' AND '.join(tags_where)}
             )
             """

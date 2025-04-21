@@ -4,13 +4,13 @@ from typing import Any, TypeAlias, TypeVar, TypedDict, Unpack
 from collections.abc import Sequence, Mapping
 
 # consumption
-from consumptionbackend.database.fields import (
+from .fields import (
     ConsumableWhereMapping,
     PersonnelWhereMapping,
     SeriesWhereMapping,
     TagWhereMapping,
 )
-from consumptionbackend.database.queries import ApplyQuery
+from .queries import ApplyQuery
 from consumptionbackend.entities import EntityBase
 from consumptionbackend.utils import AbstractSingleton
 

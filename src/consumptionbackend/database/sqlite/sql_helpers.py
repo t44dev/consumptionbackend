@@ -43,7 +43,7 @@ def to_sqlite_operator(
                 return f"{column} <= ?", value
             case WhereOperator.LIKE:
                 assert isinstance(value, str)
-                lower_value = f"%str.lower(value)%"
+                lower_value = f"%{str.lower(value)}%"
                 return f"LOWER({column}) LIKE ?", lower_value
 
 

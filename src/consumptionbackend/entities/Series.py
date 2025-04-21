@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # consumption
-from consumptionbackend.entities.EntityBase import EntityBase
+from .EntityBase import EntityBase
 
 
 @dataclass

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 # consumption
-from consumptionbackend.entities.EntityBase import EntityBase
+from .EntityBase import EntityBase
 
 
 @dataclass
