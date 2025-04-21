@@ -43,8 +43,8 @@ def to_sqlite_operator(
                 return f"{column} <= ?", value
             case WhereOperator.LIKE:
                 assert isinstance(value, str)
-                lower_value = str.lower(value)
-                return f"LOWER({column}) LIKE '%?%'", lower_value
+                lower_value = f"%str.lower(value)%"
+                return f"LOWER({column}) LIKE ?", lower_value
 
 
 def fix_value(value: Any) -> SQLiteType:
@@ -62,4 +62,4 @@ def validate_column_name(column: str) -> None:
 
 @lru_cache(maxsize=10)
 def to_shorthand(table_name: str) -> str:
-    return "".join(table_name.split("_"))
+    return "".join(map(lambda x: x[0], table_name.split("_")))

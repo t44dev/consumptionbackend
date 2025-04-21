@@ -20,7 +20,7 @@ from consumptionbackend.database.base_handlers import (
     DatabaseHandlerBase,
     WhereMapping,
 )
-from consumptionbackend.database.queries import ApplyQuery, WhereQuery
+from consumptionbackend.database.queries import ApplyQuery, WhereOperator, WhereQuery
 from consumptionbackend.entities import EntityBase
 
 E = TypeVar("E", bound=EntityBase)
@@ -43,13 +43,11 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
     MEGATABLE_QUERY = f"""
     {TABLE_MAPPING[Consumable]} {to_shorthand(TABLE_MAPPING[Consumable])} 
         JOIN {TABLE_MAPPING[Series]} {to_shorthand(TABLE_MAPPING[Series])}
-            ON {to_shorthand(TABLE_MAPPING[Consumable])}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
-        JOIN {TAGS_MAPPING_TABLE} {to_shorthand(TAGS_MAPPING_TABLE)}
-            ON {to_shorthand(TAGS_MAPPING_TABLE)}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
+            ON {to_shorthand(TABLE_MAPPING[Series])}.id = {to_shorthand(TABLE_MAPPING[Consumable])}.series_id
         JOIN {PERSONNEL_MAPPING_TABLE} {to_shorthand(PERSONNEL_MAPPING_TABLE)}
             ON {to_shorthand(PERSONNEL_MAPPING_TABLE)}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
         JOIN {TABLE_MAPPING[Personnel]} {to_shorthand(TABLE_MAPPING[Personnel])}
-            ON {to_shorthand(TABLE_MAPPING[Personnel])}.id = {PERSONNEL_MAPPING_TABLE}.personnel_id
+            ON {to_shorthand(TABLE_MAPPING[Personnel])}.id = {to_shorthand(PERSONNEL_MAPPING_TABLE)}.personnel_id
     """
 
     def __init__(self) -> None:
@@ -240,14 +238,59 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
             for column in mapping:
                 validate_column_name(column)
 
-                query: WhereQuery[Any] = mapping[column]
+                queries: list[WhereQuery[Any]] = mapping[column]
                 qualified_column = f"{to_shorthand(table_name)}.{column}"
 
-                where_str, sub_value = to_sqlite_operator(qualified_column, query)
-                where_list.append(where_str)
-                values.append(sub_value)
+                # Tags are a unique case
+                if column is "tag":
+                    tag_where, tag_values = cls.where_query_tags(queries)
+                    where_list.append(tag_where)
+                    values = values + tag_values
+                    continue
+
+                for query in queries:
+                    where_str, sub_value = to_sqlite_operator(qualified_column, query)
+                    where_list.append(where_str)
+                    values.append(sub_value)
 
         return " AND ".join(where_list), values
+
+    @classmethod
+    def where_query_tags(cls, queries: list[WhereQuery[str]]) -> tuple[str, list[str]]:
+        tag_shorthand = "tgw"
+        eq_tags = list(
+            map(
+                lambda x: x.value,
+                filter(lambda x: x.operator == WhereOperator.EQ, queries),
+            )
+        )
+        neq_tags = list(
+            map(
+                lambda x: x.value,
+                filter(lambda x: x.operator == WhereOperator.NEQ, queries),
+            )
+        )
+
+        assert len(eq_tags) > 0 or len(neq_tags) > 0
+
+        tags_where: list[str] = []
+        if len(eq_tags) > 0:
+            tags_where.append(
+                f"{tag_shorthand}.tag IN {' '.join('?' for _ in range(len(eq_tags)))}"
+            )
+        if len(neq_tags) > 0:
+            tags_where.append(
+                f"{tag_shorthand}.tag NOT IN {' '.join('?' for _ in range(len(neq_tags)))}"
+            )
+
+        tag_where = f"""
+            {to_shorthand(cls.TABLE_MAPPING[Consumable])}.id IN (
+                SELECT tgw.consumable_id FROM {cls.TAGS_MAPPING_TABLE}
+                WHERE {' AND '.join(tags_where)}
+            )
+            """
+
+        return tag_where, (eq_tags + neq_tags)
 
     @classmethod
     def apply_query(cls, apply: ApplyMapping) -> tuple[str, list[SQLiteType]]:

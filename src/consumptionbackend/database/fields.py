@@ -14,7 +14,7 @@ class BaseFieldsRequired(TypedDict):
 
 
 class BaseWhereMapping(TypedDict, total=False):
-    id: WhereQuery[int]
+    id: list[WhereQuery[int]]
 
 
 # Consumables
@@ -47,16 +47,16 @@ class ConsumableApplyMapping(TypedDict, total=False):
 
 
 class ConsumableWhereMapping(BaseWhereMapping, total=False):
-    series_id: WhereQuery[int]
-    name: WhereQuery[str]
-    type: WhereQuery[str]
-    status: WhereQuery[Status]
-    parts: WhereQuery[int]
-    max_parts: WhereQuery[int | None]
-    completions: WhereQuery[int]
-    rating: WhereQuery[float | None]
-    start_date: WhereQuery[datetime]
-    end_date: WhereQuery[datetime]
+    series_id: list[WhereQuery[int]]
+    name: list[WhereQuery[str]]
+    type: list[WhereQuery[str]]
+    status: list[WhereQuery[Status]]
+    parts: list[WhereQuery[int]]
+    max_parts: list[WhereQuery[int | None]]
+    completions: list[WhereQuery[int]]
+    rating: list[WhereQuery[float | None]]
+    start_date: list[WhereQuery[datetime]]
+    end_date: list[WhereQuery[datetime]]
 
 
 # Series
@@ -71,7 +71,7 @@ class SeriesApplyMapping(TypedDict, total=False):
 
 
 class SeriesWhereMapping(BaseWhereMapping, total=False):
-    name: WhereQuery[str]
+    name: list[WhereQuery[str]]
 
 
 # Personnel
@@ -90,18 +90,14 @@ class PersonnelApplyMapping(TypedDict, total=False):
 
 
 class PersonnelWhereMapping(BaseWhereMapping, total=False):
-    first_name: WhereQuery[str]
-    last_name: WhereQuery[str]
-    pseudonym: WhereQuery[str]
-    role: WhereQuery[str]
+    first_name: list[WhereQuery[str]]
+    last_name: list[WhereQuery[str]]
+    pseudonym: list[WhereQuery[str]]
+    role: list[WhereQuery[str]]
+
 
 # Tag
 
-class TagFieldsRequired(TypedDict):
-    consumable_id : int
-    tag : str
 
-
-class TagWhereMapping(TypedDict):
-    consumable_id : int
-    tag : str
+class TagWhereMapping(TypedDict, total=False):
+    tag: list[WhereQuery[str]]
