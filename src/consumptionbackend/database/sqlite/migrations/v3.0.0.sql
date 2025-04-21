@@ -160,14 +160,14 @@ BEGIN
         id = NEW.id;
 END;
 
-CREATE TRIGGER upper_type_upadte
+CREATE TRIGGER upper_type_update
     AFTER UPDATE ON consumables FOR EACH ROW
     WHEN NEW.type != OLD.type
 BEGIN
     UPDATE
         consumables
     SET
-        type = upper(NEW.type),
+        type = upper(NEW.type)
     WHERE
         id = NEW.id;
 END;
@@ -179,7 +179,7 @@ BEGIN
     UPDATE
         consumables
     SET
-        type = upper(NEW.type),
+        type = upper(NEW.type)
     WHERE
         id = NEW.id;
 END;
