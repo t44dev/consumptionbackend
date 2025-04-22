@@ -205,7 +205,13 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
                 validate_column_name(column)
 
                 queries: list[WhereQuery[Any]] = mapping[column]
-                qualified_column = f"{to_shorthand(table_name)}.{column}"
+                # TODO: Can this be avoided?
+                shorthand_table_name = (
+                    to_shorthand(table_name)
+                    if column != "role"
+                    else to_shorthand(SQLiteDatabaseHandler.PERSONNEL_MAPPING_TABLE)
+                )
+                qualified_column = f"{shorthand_table_name}.{column}"
 
                 # Tags are a unique case
                 if column == "tag":
