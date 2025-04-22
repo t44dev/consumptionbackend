@@ -1,20 +1,18 @@
 # stdlib
-from collections.abc import Mapping, Sequence
-from glob import glob
-from importlib import resources
-from pathlib import Path
 import sqlite3
+from collections.abc import Mapping, Sequence
 from typing import Any, TypeVar, Unpack, final
 
+
 # consumption
-from .sql_helpers import (
+from .sql_utils import (
     SQLiteType,
     to_shorthand,
     to_sqlite_operator,
     validate_column_name,
 )
+from consumptionbackend.database import DatabaseProviderBase
 from consumptionbackend.entities import Consumable, Series, Personnel
-from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database import (
     ApplyMapping,
     DatabaseHandlerBase,
@@ -24,12 +22,15 @@ from consumptionbackend.database import (
     WhereQuery,
 )
 from consumptionbackend.entities import EntityBase
+from .database_provider import SQLiteFileDatabaseProvider
 
 E = TypeVar("E", bound=EntityBase)
 
 
 @final
 class SQLiteDatabaseHandler(DatabaseHandlerBase):
+
+    _PROVIDER: type[DatabaseProviderBase] = SQLiteFileDatabaseProvider
 
     TABLE_MAPPING = {
         EntityBase: "no_table",
@@ -54,7 +55,8 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
 
     def __init__(self) -> None:
         super().__init__()
-        self.db: sqlite3.Connection = SQLiteDatabaseHandler.setup()
+        self.db = SQLiteDatabaseHandler._PROVIDER.setup()
+        assert isinstance(self.db, sqlite3.Connection)
         self.db.row_factory = sqlite3.Row
 
     def new(self, t: type[E], **values: Any) -> E:
@@ -189,45 +191,6 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         """
 
         return sql, values
-
-    @classmethod
-    def setup(cls) -> sqlite3.Connection:
-        config = ConsumptionConfig()
-        db_path = Path(config["db"])
-
-        if not db_path.is_file():
-            db_path.parent.mkdir(exist_ok=True, parents=True)
-            conn = sqlite3.connect(db_path)
-            SQLiteDatabaseHandler.migrate(conn, None, config.CURRENT_VERSION)
-            return conn
-
-        conn = sqlite3.connect(db_path)
-        version = config["version"]
-        if version != config.CURRENT_VERSION:
-            SQLiteDatabaseHandler.migrate(conn, version, config.CURRENT_VERSION)
-            config["version"] = config.CURRENT_VERSION
-            config.write()
-
-        return conn
-
-    @classmethod
-    def migrate(
-        cls, conn: sqlite3.Connection, version_start: str | None, version_end: str
-    ) -> None:
-        cur = conn.cursor()
-
-        # TODO: Can this be made dynamic?
-        migrations_dir = resources.files(
-            "consumptionbackend.database.sqlite.migrations"
-        )
-        files = filter(
-            lambda x: (version_start is None or x > version_start) and x <= version_end,
-            sorted(glob(str(migrations_dir / "v[0-9].[0-9].[0-9].sql"))),
-        )
-        for file in files:
-            _ = cur.executescript(file)
-
-        cur.close()
 
     @classmethod
     def where_query(cls, where: WhereMapping) -> tuple[str, list[SQLiteType]]:

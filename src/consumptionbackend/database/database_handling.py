@@ -12,6 +12,7 @@ from .fields import (
     TagWhereMapping,
 )
 from .queries import ApplyQuery
+from .database_provider import DatabaseProviderBase
 from consumptionbackend.utils import AbstractSingleton
 from consumptionbackend.entities import EntityBase
 
@@ -31,6 +32,8 @@ ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
 
 
 class DatabaseHandlerBase(AbstractSingleton, ABC):
+
+    _PROVIDER: type[DatabaseProviderBase]
 
     @abstractmethod
     def new(self, t: type[E], **values: Any) -> E:
