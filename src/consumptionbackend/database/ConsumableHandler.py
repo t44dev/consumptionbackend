@@ -19,19 +19,19 @@ from consumptionbackend.entities import Consumable
 
 class ConsumableHandlerBase(EntityHandlerBase, ABC):
 
-    HANDLER: type[DatabaseHandlerBase]
+    _HANDLER: type[DatabaseHandlerBase]
 
     @classmethod
     def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Consumable:
-        return cls.HANDLER().new(Consumable, **values)
+        return cls._HANDLER().new(Consumable, **values)
 
     @classmethod
     def find_by_id(cls, id: int) -> Consumable:
-        return cls.HANDLER().find_by_id(Consumable, id)
+        return cls._HANDLER().find_by_id(Consumable, id)
 
     @classmethod
     def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Consumable]:
-        return cls.HANDLER().find(Consumable, **where)
+        return cls._HANDLER().find(Consumable, **where)
 
     @classmethod
     def update(
@@ -39,8 +39,8 @@ class ConsumableHandlerBase(EntityHandlerBase, ABC):
         where: WhereMapping,
         apply: ConsumableApplyMapping,
     ) -> Sequence[Consumable]:
-        return cls.HANDLER().update(Consumable, where, cast(ApplyMapping, apply))
+        return cls._HANDLER().update(Consumable, where, cast(ApplyMapping, apply))
 
     @classmethod
     def delete(cls, **where: Unpack[WhereMapping]) -> None:
-        return cls.HANDLER().delete(Consumable, **where)
+        return cls._HANDLER().delete(Consumable, **where)

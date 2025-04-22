@@ -1,4 +1,5 @@
 # stdlib
+from typing import final
 
 # consumption
 from consumptionbackend.database.database_handling import (
@@ -8,6 +9,7 @@ from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 from consumptionbackend.database import PersonnelHandlerBase
 
 
+@final
 class SQLitePersonnelHandlerBase(PersonnelHandlerBase):
 
-    HANDLER: type[DatabaseHandlerBase] = SQLiteDatabaseHandler
+    _HANDLER: type[DatabaseHandlerBase] = SQLiteDatabaseHandler
