@@ -7,6 +7,7 @@ from typing import Any, TypeVar, Unpack, final
 # consumption
 from .sql_utils import (
     SQLiteType,
+    fix_value,
     to_shorthand,
     to_sqlite_operator,
     validate_column_name,
@@ -71,20 +72,22 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         cur.close()
         return self.find_by_id(t, row)
 
-    def _new_sql(
-        self, t: type[E], **values: Any
-    ) -> tuple[str, Mapping[str, SQLiteType]]:
+    def _new_sql(self, t: type[E], **values: Any) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
         placeholders = ", ".join(["?" for _ in range(len(values))])
+
+        new_values: list[SQLiteType] = []
+
         labels: list[str] = []
-        for key in values:
+        for key, value in values.items():
             validate_column_name(key)
-            labels.append(f":{key}")
+            new_values.append(fix_value(value))
+            labels.append(key)
         labels_str = ", ".join(labels)
 
         sql = f"INSERT INTO {table} ({labels_str}) VALUES ({placeholders})"
 
-        return sql, values
+        return sql, new_values
 
     def find_by_id(self, t: type[E], id: int) -> E:
         cur = self.db.cursor()
@@ -99,12 +102,10 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         cur.close()
         return t(**result)
 
-    def _find_by_id_sql(
-        self, t: type[E], id: int
-    ) -> tuple[str, Mapping[str, SQLiteType]]:
+    def _find_by_id_sql(self, t: type[E], id: int) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
-        return f"SELECT * FROM {table} WHERE id = :id", {"id": id}
+        return f"SELECT * FROM {table} WHERE id = ?", [id]
 
     def find(self, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
         cur = self.db.cursor()

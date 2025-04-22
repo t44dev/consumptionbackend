@@ -46,6 +46,7 @@ class SQLiteFileDatabaseProvider(DatabaseProviderBase):
             sorted(glob(str(migrations_dir / "v[0-9].[0-9].[0-9].sql"))),
         )
         for file in files:
-            _ = cur.executescript(file)
+            script_content = Path(file).read_text()
+            _ = cur.executescript(script_content)
 
         cur.close()

@@ -149,7 +149,7 @@ END;
 
 CREATE TRIGGER parts_on_completed_insert
     AFTER INSERT ON consumables
-    WHEN NEW.status = 4 AND OLD.status != 4
+    WHEN NEW.status = 4
 BEGIN
     UPDATE
         consumables
@@ -174,7 +174,6 @@ END;
 
 CREATE TRIGGER upper_type_insert
     AFTER INSERT ON consumables
-    WHEN NEW.type != OLD.type
 BEGIN
     UPDATE
         consumables
