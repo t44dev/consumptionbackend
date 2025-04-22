@@ -1,5 +1,6 @@
 # stdlib
 from datetime import datetime
+from enum import IntEnum
 from functools import lru_cache
 from typing import Any, TypeAlias
 
@@ -48,9 +49,13 @@ def to_sqlite_operator(
 
 
 def fix_value(value: Any) -> SQLiteType:
-    if isinstance(value, datetime):
-        return value.timestamp()
-    return value
+    match value:
+        case datetime():
+            return value.timestamp()
+        case IntEnum():
+            return int(value)
+        case _:
+            return value
 
 
 def validate_column_name(column: str) -> None:

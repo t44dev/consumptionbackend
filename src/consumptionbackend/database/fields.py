@@ -1,4 +1,5 @@
 # stdlib
+from collections.abc import Sequence
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
@@ -10,11 +11,11 @@ from consumptionbackend.entities import Status
 
 
 class BaseFieldsRequired(TypedDict):
-    id: int
+    pass
 
 
 class BaseWhereMapping(TypedDict, total=False):
-    id: list[WhereQuery[int]]
+    id: Sequence[WhereQuery[int]]
 
 
 # Consumables
@@ -47,16 +48,16 @@ class ConsumableApplyMapping(TypedDict, total=False):
 
 
 class ConsumableWhereMapping(BaseWhereMapping, total=False):
-    series_id: list[WhereQuery[int]]
-    name: list[WhereQuery[str]]
-    type: list[WhereQuery[str]]
-    status: list[WhereQuery[Status]]
-    parts: list[WhereQuery[int]]
-    max_parts: list[WhereQuery[int | None]]
-    completions: list[WhereQuery[int]]
-    rating: list[WhereQuery[float | None]]
-    start_date: list[WhereQuery[datetime]]
-    end_date: list[WhereQuery[datetime]]
+    series_id: Sequence[WhereQuery[int]]
+    name: Sequence[WhereQuery[str]]
+    type: Sequence[WhereQuery[str]]
+    status: Sequence[WhereQuery[Status]]
+    parts: Sequence[WhereQuery[int]]
+    max_parts: Sequence[WhereQuery[int | None]]
+    completions: Sequence[WhereQuery[int]]
+    rating: Sequence[WhereQuery[float | None]]
+    start_date: Sequence[WhereQuery[datetime]]
+    end_date: Sequence[WhereQuery[datetime]]
 
 
 # Series
@@ -71,7 +72,7 @@ class SeriesApplyMapping(TypedDict, total=False):
 
 
 class SeriesWhereMapping(BaseWhereMapping, total=False):
-    name: list[WhereQuery[str]]
+    name: Sequence[WhereQuery[str]]
 
 
 # Personnel
@@ -90,14 +91,14 @@ class PersonnelApplyMapping(TypedDict, total=False):
 
 
 class PersonnelWhereMapping(BaseWhereMapping, total=False):
-    first_name: list[WhereQuery[str]]
-    last_name: list[WhereQuery[str]]
-    pseudonym: list[WhereQuery[str]]
-    role: list[WhereQuery[str]]
+    first_name: Sequence[WhereQuery[str]]
+    last_name: Sequence[WhereQuery[str]]
+    pseudonym: Sequence[WhereQuery[str]]
+    role: Sequence[WhereQuery[str]]
 
 
 # Tag
 
 
 class TagWhereMapping(TypedDict, total=False):
-    tag: list[WhereQuery[str]]
+    tag: Sequence[WhereQuery[str]]

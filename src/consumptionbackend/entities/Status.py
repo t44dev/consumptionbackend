@@ -1,8 +1,8 @@
 # stdlib
-from enum import Enum
+from enum import IntEnum
 
 
-class Status(Enum):
+class Status(IntEnum):
     PLANNING = 0
     IN_PROGRESS = 1
     ON_HOLD = 2

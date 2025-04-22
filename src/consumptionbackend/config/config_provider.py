@@ -17,11 +17,11 @@ class ConfigProvider(ABC):
         pass
 
     @abstractmethod
-    def read(cls) -> ConfigDict:
+    def read(self) -> ConfigDict:
         pass
 
     @abstractmethod
-    def write(cls, config: ConfigDict) -> None:
+    def write(self, config: ConfigDict) -> None:
         pass
 
 

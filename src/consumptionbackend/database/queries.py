@@ -1,12 +1,12 @@
 # stdlib
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
 
-class ApplyOperator(Enum):
+class ApplyOperator(IntEnum):
     APPLY = 0
     ADD = 1
     SUB = 2
@@ -18,7 +18,7 @@ class ApplyQuery(Generic[T]):
     operator: ApplyOperator
 
 
-class WhereOperator(Enum):
+class WhereOperator(IntEnum):
     EQ = 0
     NEQ = 1
     GT = 2
