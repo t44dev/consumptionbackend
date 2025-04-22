@@ -12,25 +12,37 @@ class ConfigDict(TypedDict):
 
 class ConfigProvider(ABC):
 
-    @classmethod
     @abstractmethod
-    def read(cls, path: Path) -> ConfigDict:
+    def setup(self) -> ConfigDict:
         pass
 
-    @classmethod
     @abstractmethod
-    def write(cls, path: Path, config: ConfigDict) -> None:
+    def read(cls) -> ConfigDict:
+        pass
+
+    @abstractmethod
+    def write(cls, config: ConfigDict) -> None:
         pass
 
 
 @final
 class FileConfigProvider(ConfigProvider):
-    @classmethod
-    def read(cls, path: Path) -> ConfigDict:
-        with open(path, "r") as config_file:
+
+    def __init__(self, path: Path, default_config: ConfigDict) -> None:
+        super().__init__()
+        self.path = path
+        self.default_config = default_config
+
+    def setup(self) -> ConfigDict:
+        if not self.path.is_file():
+            self.path.parent.mkdir(exist_ok=True, parents=True)
+            self.write(self.default_config)
+        return self.read()
+
+    def read(self) -> ConfigDict:
+        with open(self.path, "r") as config_file:
             return json.load(config_file)
 
-    @classmethod
-    def write(cls, path: Path, config: ConfigDict) -> None:
-        with open(path, "w+") as config_file:
+    def write(self, config: ConfigDict) -> None:
+        with open(self.path, "w+") as config_file:
             json.dump(config, config_file)

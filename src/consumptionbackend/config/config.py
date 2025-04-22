@@ -13,8 +13,6 @@ from .config_provider import ConfigProvider, FileConfigProvider, ConfigDict
 @final
 class ConsumptionConfig(Singleton):
 
-    _PROVIDER: type[ConfigProvider] = FileConfigProvider
-
     CURRENT_VERSION: str = "3.0.0"
     CONFIG_DIR: Path = user_config_path("consumption")
     DATA_DIR: Path = user_data_path("consumption")
@@ -26,18 +24,13 @@ class ConsumptionConfig(Singleton):
         "db": str(DATA_DIR / "consumption.db"),
     }
 
+    _PROVIDER: ConfigProvider = FileConfigProvider(CONFIG_FILE_PATH, DEFAULT_CONFIG)
+
     def __init__(self) -> None:
-        if not ConsumptionConfig.CONFIG_FILE_PATH.is_file():
-            ConsumptionConfig.CONFIG_FILE_PATH.parent.mkdir(exist_ok=True, parents=True)
-            ConsumptionConfig._PROVIDER.write(
-                ConsumptionConfig.CONFIG_FILE_PATH, ConsumptionConfig.DEFAULT_CONFIG
-            )
-        self._config: ConfigDict = ConsumptionConfig._PROVIDER.read(
-            ConsumptionConfig.CONFIG_FILE_PATH
-        )
+        self._config = ConsumptionConfig._PROVIDER.setup()
 
     def write(self) -> None:
-        self._PROVIDER.write(ConsumptionConfig.CONFIG_FILE_PATH, self._config)
+        self._PROVIDER.write(self._config)
 
     def __getitem__(self, key: str) -> Any:
         return self._config[key]  # pyright:ignore[reportUnknownVariableType]
