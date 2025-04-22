@@ -31,7 +31,7 @@ ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
 class DatabaseHandlerBase(ABC, metaclass=AbstractSingleton):
 
     @abstractmethod
-    def new(self, t: type[E], **values: Mapping[str, Any]) -> E:
+    def new(self, t: type[E], **values: Any) -> E:
         pass
 
     @abstractmethod
@@ -47,7 +47,7 @@ class DatabaseHandlerBase(ABC, metaclass=AbstractSingleton):
         self,
         t: type[E],
         where: WhereMapping,
-        apply: Mapping[str, ApplyQuery[Any]],
+        apply: ApplyMapping,
     ) -> Sequence[E]:
         pass
 

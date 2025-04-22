@@ -1,10 +1,15 @@
 # stdlib
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Unpack
+from typing import Unpack, cast
 
 # consumption
-from .database_handling import EntityHandlerBase, WhereMapping
+from .database_handling import (
+    ApplyMapping,
+    DatabaseHandlerBase,
+    EntityHandlerBase,
+    WhereMapping,
+)
 from .fields import (
     PersonnelApplyMapping,
     PersonnelFieldsRequired,
@@ -14,31 +19,28 @@ from consumptionbackend.entities import Personnel
 
 class PersonnelHandlerBase(EntityHandlerBase, ABC):
 
+    HANDLER: type[DatabaseHandlerBase]
+
     @classmethod
-    @abstractmethod
     def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Personnel:
-        pass
+        return cls.HANDLER().new(Personnel, **values)
 
     @classmethod
-    @abstractmethod
     def find_by_id(cls, id: int) -> Personnel:
-        pass
+        return cls.HANDLER().find_by_id(Personnel, id)
 
     @classmethod
-    @abstractmethod
     def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Personnel]:
-        pass
+        return cls.HANDLER().find(Personnel, **where)
 
     @classmethod
-    @abstractmethod
     def update(
         cls,
         where: WhereMapping,
         apply: PersonnelApplyMapping,
-    ) -> Sequence[int]:
-        pass
+    ) -> Sequence[Personnel]:
+        return cls.HANDLER().update(Personnel, where, cast(ApplyMapping, apply))
 
     @classmethod
-    @abstractmethod
-    def delete(cls, **where: WhereMapping) -> None:
-        pass
+    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+        return cls.HANDLER().delete(Personnel, **where)

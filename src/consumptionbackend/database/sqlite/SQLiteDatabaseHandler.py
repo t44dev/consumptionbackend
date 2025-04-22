@@ -57,7 +57,7 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         self.db: sqlite3.Connection = SQLiteDatabaseHandler.setup()
         self.db.row_factory = sqlite3.Row
 
-    def new(self, t: type[E], **values: SQLiteType) -> E:
+    def new(self, t: type[E], **values: Any) -> E:
         cur = self.db.cursor()
 
         row = cur.execute(*(self._new_sql(t, **values))).lastrowid
@@ -70,7 +70,7 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         return self.find_by_id(t, row)
 
     def _new_sql(
-        self, t: type[E], **values: SQLiteType
+        self, t: type[E], **values: Any
     ) -> tuple[str, Mapping[str, SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
         placeholders = ", ".join(["?" for _ in range(len(values))])
