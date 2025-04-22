@@ -16,7 +16,7 @@ class ConfigDict(TypedDict):
 
 
 @final
-class ConsumptionConfig(metaclass=Singleton):
+class ConsumptionConfig(Singleton):
 
     CURRENT_VERSION: str = "3.0.0"
     CONFIG_DIR: Path = user_config_path("consumption")

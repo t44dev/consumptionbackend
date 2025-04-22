@@ -3,6 +3,7 @@ from abc import abstractmethod, ABC
 from typing import Any, TypeAlias, TypeVar, TypedDict, Unpack
 from collections.abc import Sequence, Mapping
 
+
 # consumption
 from .fields import (
     ConsumableWhereMapping,
@@ -11,8 +12,9 @@ from .fields import (
     TagWhereMapping,
 )
 from .queries import ApplyQuery
-from consumptionbackend.entities import EntityBase
 from consumptionbackend.utils import AbstractSingleton
+from consumptionbackend.entities import EntityBase
+
 
 E = TypeVar("E", bound=EntityBase)
 
@@ -28,7 +30,7 @@ class WhereMapping(TypedDict, total=False):
 ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
 
 
-class DatabaseHandlerBase(ABC, metaclass=AbstractSingleton):
+class DatabaseHandlerBase(AbstractSingleton, ABC):
 
     @abstractmethod
     def new(self, t: type[E], **values: Any) -> E:
