@@ -13,6 +13,7 @@ from .database_handling import (
 from .fields import (
     ConsumableApplyMapping,
     ConsumableFieldsRequired,
+    ConsumableWhereMapping,
 )
 from consumptionbackend.entities import Consumable
 
@@ -30,17 +31,21 @@ class ConsumableHandlerBase(EntityHandlerBase, ABC):
         return cls._HANDLER().find_by_id(Consumable, id)
 
     @classmethod
-    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Consumable]:
+    def find(cls, **where: Unpack[ConsumableWhereMapping]) -> Sequence[Consumable]:
         return cls._HANDLER().find(Consumable, **where)
 
     @classmethod
     def update(
         cls,
-        where: WhereMapping,
+        where: ConsumableWhereMapping,
         apply: ConsumableApplyMapping,
     ) -> Sequence[Consumable]:
-        return cls._HANDLER().update(Consumable, where, cast(ApplyMapping, apply))
+        return cls._HANDLER().update(
+            Consumable,
+            cast(WhereMapping, cast(object, where)),
+            cast(ApplyMapping, apply),
+        )
 
     @classmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[ConsumableWhereMapping]) -> None:
         return cls._HANDLER().delete(Consumable, **where)

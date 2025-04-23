@@ -13,6 +13,7 @@ from .database_handling import (
 from .fields import (
     SeriesApplyMapping,
     SeriesFieldsRequired,
+    SeriesWhereMapping,
 )
 from consumptionbackend.entities import Series
 
@@ -30,17 +31,19 @@ class SeriesHandlerBase(EntityHandlerBase, ABC):
         return cls._HANDLER().find_by_id(Series, id)
 
     @classmethod
-    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Series]:
+    def find(cls, **where: Unpack[SeriesWhereMapping]) -> Sequence[Series]:
         return cls._HANDLER().find(Series, **where)
 
     @classmethod
     def update(
         cls,
-        where: WhereMapping,
+        where: SeriesWhereMapping,
         apply: SeriesApplyMapping,
     ) -> Sequence[Series]:
-        return cls._HANDLER().update(Series, where, cast(ApplyMapping, apply))
+        return cls._HANDLER().update(
+            Series, cast(WhereMapping, cast(object, where)), cast(ApplyMapping, apply)
+        )
 
     @classmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[SeriesWhereMapping]) -> None:
         return cls._HANDLER().delete(Series, **where)

@@ -13,6 +13,7 @@ from .database_handling import (
 from .fields import (
     PersonnelApplyMapping,
     PersonnelFieldsRequired,
+    PersonnelWhereMapping,
 )
 from consumptionbackend.entities import Personnel
 
@@ -30,17 +31,21 @@ class PersonnelHandlerBase(EntityHandlerBase, ABC):
         return cls._HANDLER().find_by_id(Personnel, id)
 
     @classmethod
-    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Personnel]:
+    def find(cls, **where: Unpack[PersonnelWhereMapping]) -> Sequence[Personnel]:
         return cls._HANDLER().find(Personnel, **where)
 
     @classmethod
     def update(
         cls,
-        where: WhereMapping,
+        where: PersonnelWhereMapping,
         apply: PersonnelApplyMapping,
     ) -> Sequence[Personnel]:
-        return cls._HANDLER().update(Personnel, where, cast(ApplyMapping, apply))
+        return cls._HANDLER().update(
+            Personnel,
+            cast(WhereMapping, cast(object, where)),
+            cast(ApplyMapping, apply),
+        )
 
     @classmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[PersonnelWhereMapping]) -> None:
         return cls._HANDLER().delete(Personnel, **where)
