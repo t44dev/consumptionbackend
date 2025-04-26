@@ -30,8 +30,8 @@ class ConsumableFieldsRequired(BaseFieldsRequired):
     max_parts: NotRequired[int | None]
     completions: NotRequired[int]
     rating: NotRequired[float | None]
-    start_date: NotRequired[datetime]
-    end_date: NotRequired[datetime]
+    start_date: NotRequired[datetime | None]
+    end_date: NotRequired[datetime | None]
 
 
 class ConsumableApplyMapping(TypedDict, total=False):
@@ -43,8 +43,8 @@ class ConsumableApplyMapping(TypedDict, total=False):
     max_parts: ApplyQuery[int | None]
     completions: ApplyQuery[int]
     rating: ApplyQuery[float | None]
-    start_date: ApplyQuery[datetime]
-    end_date: ApplyQuery[datetime]
+    start_date: ApplyQuery[datetime | None]
+    end_date: ApplyQuery[datetime | None]
 
 
 class ConsumableWhereMapping(BaseWhereMapping, total=False):
@@ -56,8 +56,8 @@ class ConsumableWhereMapping(BaseWhereMapping, total=False):
     max_parts: Sequence[WhereQuery[int | None]]
     completions: Sequence[WhereQuery[int]]
     rating: Sequence[WhereQuery[float | None]]
-    start_date: Sequence[WhereQuery[datetime]]
-    end_date: Sequence[WhereQuery[datetime]]
+    start_date: Sequence[WhereQuery[datetime | None]]
+    end_date: Sequence[WhereQuery[datetime | None]]
 
 
 # Series

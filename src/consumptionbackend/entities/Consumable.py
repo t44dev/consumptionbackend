@@ -17,5 +17,5 @@ class Consumable(EntityBase):
     max_parts: int | None
     completions: int
     rating: float | None
-    start_date: datetime
-    end_date: datetime
+    start_date: datetime | None
+    end_date: datetime | None
