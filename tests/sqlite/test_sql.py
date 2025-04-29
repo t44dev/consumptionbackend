@@ -94,7 +94,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "SELECT p.* FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(p.first_name) LIKE ? AND cp.role = ?"
+        expected_sql = "SELECT DISTINCT p.* FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(p.first_name) LIKE ? AND cp.role = ?"
 
         self.assertEqual(stripped_sql, expected_sql)
         self.assertListEqual(new_values, ["%john ronald reuel%", "Author"])
@@ -135,7 +135,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "SELECT p.* FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) )"
+        expected_sql = "SELECT DISTINCT p.* FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) )"
         expected_values = [
             4,
             dtgt.timestamp(),
@@ -170,7 +170,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "UPDATE series SET name = ? WHERE id IN ( SELECT s.id FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(s.name) LIKE ? ) RETURNING *"
+        expected_sql = "UPDATE series SET name = ? WHERE id IN ( SELECT s.id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(s.name) LIKE ? ) RETURNING *"
         expected_values = ["Lord of the Rings", "%lort of the%"]
 
         self.assertEqual(stripped_sql, expected_sql)
@@ -220,7 +220,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "UPDATE consumables SET name = ?, type = ?, parts = parts + ?, end_date = end_date - ?, series_id = ? WHERE id IN ( SELECT c.id FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) ) RETURNING *"
+        expected_sql = "UPDATE consumables SET name = ?, type = ?, parts = parts + ?, end_date = end_date - ?, series_id = ? WHERE id IN ( SELECT c.id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) ) RETURNING *"
         expected_values = [
             "Lord of The Rings",
             "TV",
@@ -260,7 +260,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "DELETE FROM personnel t WHERE t.id IN ( SELECT p.id FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(p.first_name) LIKE ? AND cp.role = ? )"
+        expected_sql = "DELETE FROM personnel t WHERE t.id IN ( SELECT p.id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE LOWER(p.first_name) LIKE ? AND cp.role = ? )"
 
         self.assertEqual(stripped_sql, expected_sql)
         self.assertListEqual(new_values, ["%john ronald reuel%", "Author"])
@@ -301,7 +301,7 @@ class TestSQL(unittest.TestCase):
         )
 
         stripped_sql = " ".join(sql.split())
-        expected_sql = "DELETE FROM personnel t WHERE t.id IN ( SELECT p.id FROM consumables c JOIN series s ON s.id = c.series_id JOIN consumable_personnel cp ON cp.consumable_id = c.id JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) )"
+        expected_sql = "DELETE FROM personnel t WHERE t.id IN ( SELECT p.id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) )"
         expected_values = [
             4,
             dtgt.timestamp(),
