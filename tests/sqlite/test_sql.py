@@ -1,6 +1,5 @@
 # stdlib
 import datetime
-from typing import cast
 import unittest
 
 # consumption
@@ -167,7 +166,7 @@ class TestSQL(unittest.TestCase):
             sql,
             new_values,
         ) = SQLiteDatabaseHandler()._update_sql(  # pyright:ignore[reportPrivateUsage]
-            Series, where, cast(ApplyMapping, apply)
+            Series, where, apply
         )
 
         stripped_sql = " ".join(sql.split())
@@ -217,7 +216,7 @@ class TestSQL(unittest.TestCase):
             sql,
             new_values,
         ) = SQLiteDatabaseHandler()._update_sql(  # pyright:ignore[reportPrivateUsage]
-            Consumable, where, cast(ApplyMapping, apply)
+            Consumable, where, apply
         )
 
         stripped_sql = " ".join(sql.split())

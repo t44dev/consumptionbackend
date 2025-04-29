@@ -1,7 +1,7 @@
 # stdlib
 from abc import abstractmethod, ABC
-from typing import Any, Generic, TypeAlias, TypeVar, TypedDict, Unpack
-from collections.abc import Sequence, Mapping
+from typing import Any, Generic, TypeVar, TypedDict, Unpack
+from collections.abc import Sequence 
 
 # consumption
 from .fields import (
@@ -10,7 +10,6 @@ from .fields import (
     SeriesWhereMapping,
     TagWhereMapping,
 )
-from .queries import ApplyQuery
 from consumptionbackend.entities import EntityBase
 
 
@@ -23,9 +22,6 @@ class WhereMapping(TypedDict, total=False):
     series: SeriesWhereMapping
     personnel: PersonnelWhereMapping
     consumable_tags: TagWhereMapping
-
-
-ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
 
 
 class DatabaseHandlerBase(Generic[E], ABC):
@@ -50,7 +46,7 @@ class DatabaseHandlerBase(Generic[E], ABC):
     def update(
         cls,
         where: WhereMapping,
-        apply: ApplyMapping,
+        apply: Any,
     ) -> Sequence[E]:
         pass
 

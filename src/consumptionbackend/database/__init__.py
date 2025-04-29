@@ -1,7 +1,7 @@
 from .ConsumableHandler import ConsumableHandlerBase
 from .PersonnelHandler import PersonnelHandlerBase
 from .SeriesHandler import SeriesHandlerBase
-from .database_handling import WhereMapping, ApplyMapping, DatabaseHandlerBase
+from .database_handling import WhereMapping, DatabaseHandlerBase
 from .fields import (
     ConsumableFieldsRequired,
     ConsumableApplyMapping,
@@ -21,7 +21,6 @@ __all__ = [
     "PersonnelHandlerBase",
     "SeriesHandlerBase",
     "WhereMapping",
-    "ApplyMapping",
     "DatabaseHandlerBase",
     "ConsumableFieldsRequired",
     "ConsumableApplyMapping",

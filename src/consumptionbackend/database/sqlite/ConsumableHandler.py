@@ -3,12 +3,12 @@ from typing import Unpack, final
 from collections.abc import Sequence
 
 # consumption
+from consumptionbackend.database.fields import ConsumableApplyMapping
 from consumptionbackend.entities import Consumable
 from consumptionbackend.database import (
     ConsumableHandlerBase,
     ConsumableFieldsRequired,
     WhereMapping,
-    ApplyMapping,
 )
 from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
@@ -34,7 +34,7 @@ class SQLiteConsumableHandlerBase(ConsumableHandlerBase):
     def update(
         cls,
         where: WhereMapping,
-        apply: ApplyMapping,
+        apply: ConsumableApplyMapping,
     ) -> Sequence[Consumable]:
         return cls._HANDLER.update(Consumable, where, apply)
 

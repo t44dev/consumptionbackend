@@ -14,7 +14,6 @@ from .sql_utils import (
 )
 from consumptionbackend.entities import Consumable, Series, Personnel
 from consumptionbackend.database import (
-    ApplyMapping,
     WhereMapping,
     ApplyQuery,
     WhereOperator,
@@ -134,7 +133,7 @@ class SQLiteDatabaseHandler:
         cls,
         t: type[E],
         where: WhereMapping,
-        apply: ApplyMapping,
+        apply: Any,
     ) -> Sequence[E]:
         cur = cls.PROVIDER().db.cursor()
 
@@ -151,7 +150,7 @@ class SQLiteDatabaseHandler:
         cls,
         t: type[E],
         where: WhereMapping,
-        apply: ApplyMapping,
+        apply: Any,
     ) -> tuple[str, list[SQLiteType]]:
         where_query, where_values = SQLiteDatabaseHandler.where_query(where)
         apply_query, apply_values = SQLiteDatabaseHandler.apply_query(apply)
@@ -267,7 +266,7 @@ class SQLiteDatabaseHandler:
         return tag_where, (eq_tags + neq_tags)
 
     @classmethod
-    def apply_query(cls, apply: ApplyMapping) -> tuple[str, list[SQLiteType]]:
+    def apply_query(cls, apply: Any) -> tuple[str, list[SQLiteType]]:
         apply_list: list[str] = []
         values: list[SQLiteType] = []
         for column in apply:
