@@ -1,8 +1,7 @@
 # stdlib
 from abc import abstractmethod, ABC
-from typing import Any, TypeAlias, TypeVar, TypedDict, Unpack
+from typing import Any, Generic, TypeAlias, TypeVar, TypedDict, Unpack
 from collections.abc import Sequence, Mapping
-
 
 # consumption
 from .fields import (
@@ -12,8 +11,6 @@ from .fields import (
     TagWhereMapping,
 )
 from .queries import ApplyQuery
-from .database_provider import DatabaseProviderBase
-from consumptionbackend.utils import AbstractSingleton
 from consumptionbackend.entities import EntityBase
 
 
@@ -31,38 +28,33 @@ class WhereMapping(TypedDict, total=False):
 ApplyMapping: TypeAlias = Mapping[str, ApplyQuery[Any]]
 
 
-class DatabaseHandlerBase(AbstractSingleton, ABC):
+class DatabaseHandlerBase(Generic[E], ABC):
 
-    _PROVIDER: type[DatabaseProviderBase]
-
+    @classmethod
     @abstractmethod
-    def new(self, t: type[E], **values: Any) -> E:
+    def new(cls, **values: Any) -> E:
         pass
 
+    @classmethod
     @abstractmethod
-    def find_by_id(self, t: type[E], id: int) -> E:
+    def find_by_id(cls, id: int) -> E:
         pass
 
+    @classmethod
     @abstractmethod
-    def find(self, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
+    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[E]:
         pass
 
+    @classmethod
     @abstractmethod
     def update(
-        self,
-        t: type[E],
+        cls,
         where: WhereMapping,
         apply: ApplyMapping,
     ) -> Sequence[E]:
         pass
 
+    @classmethod
     @abstractmethod
-    def delete(self, t: type[E], **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[WhereMapping]) -> None:
         pass
-
-
-class EntityHandlerBase(ABC):
-    def __init__(self) -> None:
-        raise RuntimeError(
-            f"Attempted to instantiate DatabaseHandler {type(self).__name__}. DatabaseHandler cannot be used outside of a static context."
-        )

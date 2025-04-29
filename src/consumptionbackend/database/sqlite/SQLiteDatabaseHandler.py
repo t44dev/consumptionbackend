@@ -12,26 +12,24 @@ from .sql_utils import (
     to_sqlite_operator,
     validate_column_name,
 )
-from consumptionbackend.database import DatabaseProviderBase
 from consumptionbackend.entities import Consumable, Series, Personnel
 from consumptionbackend.database import (
     ApplyMapping,
-    DatabaseHandlerBase,
     WhereMapping,
     ApplyQuery,
     WhereOperator,
     WhereQuery,
 )
 from consumptionbackend.entities import EntityBase
-from .database_provider import SQLiteFileDatabaseProvider
+from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 
 E = TypeVar("E", bound=EntityBase)
 
 
 @final
-class SQLiteDatabaseHandler(DatabaseHandlerBase):
+class SQLiteDatabaseHandler:
 
-    _PROVIDER: type[DatabaseProviderBase] = SQLiteFileDatabaseProvider
+    PROVIDER: type[SQLiteDatabaseProviderBase] = SQLiteFileDatabaseProvider
 
     TABLE_MAPPING = {
         EntityBase: "no_table",
@@ -54,25 +52,21 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
             ON {to_shorthand(TABLE_MAPPING[Personnel])}.id = {to_shorthand(PERSONNEL_MAPPING_TABLE)}.personnel_id
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.db = SQLiteDatabaseHandler._PROVIDER.setup()
-        assert isinstance(self.db, sqlite3.Connection)
-        self.db.row_factory = sqlite3.Row
+    @classmethod
+    def new(cls, t: type[E], **values: Any) -> E:
+        cur = cls.PROVIDER().db.cursor()
 
-    def new(self, t: type[E], **values: Any) -> E:
-        cur = self.db.cursor()
-
-        row = cur.execute(*(self._new_sql(t, **values))).lastrowid
+        row = cur.execute(*(cls._new_sql(t, **values))).lastrowid
 
         if row is None:
             raise RuntimeError("No row id after insertion.")
 
-        self.db.commit()
+        cls.PROVIDER().db.commit()
         cur.close()
-        return self.find_by_id(t, row)
+        return cls.find_by_id(t, row)
 
-    def _new_sql(self, t: type[E], **values: Any) -> tuple[str, list[SQLiteType]]:
+    @classmethod
+    def _new_sql(cls, t: type[E], **values: Any) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
         placeholders = ", ".join(["?" for _ in range(len(values))])
 
@@ -89,11 +83,12 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
 
         return sql, new_values
 
-    def find_by_id(self, t: type[E], id: int) -> E:
-        cur = self.db.cursor()
+    @classmethod
+    def find_by_id(cls, t: type[E], id: int) -> E:
+        cur = cls.PROVIDER().db.cursor()
 
         result: sqlite3.Row | None = cur.execute(
-            *(self._find_by_id_sql(t, id))
+            *(cls._find_by_id_sql(t, id))
         ).fetchone()
 
         if result is None:
@@ -102,24 +97,27 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
         cur.close()
         return t(**result)
 
-    def _find_by_id_sql(self, t: type[E], id: int) -> tuple[str, list[SQLiteType]]:
+    @classmethod
+    def _find_by_id_sql(cls, t: type[E], id: int) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id = ?", [id]
 
-    def find(self, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
-        cur = self.db.cursor()
+    @classmethod
+    def find(cls, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
+        cur = cls.PROVIDER().db.cursor()
 
         results: list[sqlite3.Row] = cur.execute(
-            *(self._find_sql(t, **where))
+            *(cls._find_sql(t, **where))
         ).fetchall()
 
-        self.db.commit()
+        cls.PROVIDER().db.commit()
         cur.close()
         return list(map(lambda result: t(**result), results))
 
+    @classmethod
     def _find_sql(
-        self, t: type[E], **where: Unpack[WhereMapping]
+        cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, list[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
@@ -131,24 +129,26 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
 
         return sql, values
 
+    @classmethod
     def update(
-        self,
+        cls,
         t: type[E],
         where: WhereMapping,
         apply: ApplyMapping,
     ) -> Sequence[E]:
-        cur = self.db.cursor()
+        cur = cls.PROVIDER().db.cursor()
 
         results: list[sqlite3.Row] = cur.execute(
-            *(self._update_sql(t, where, apply))
+            *(cls._update_sql(t, where, apply))
         ).fetchall()
 
-        self.db.commit()
+        cls.PROVIDER().db.commit()
         cur.close()
         return list(map(lambda result: t(**result), results))
 
+    @classmethod
     def _update_sql(
-        self,
+        cls,
         t: type[E],
         where: WhereMapping,
         apply: ApplyMapping,
@@ -169,16 +169,18 @@ class SQLiteDatabaseHandler(DatabaseHandlerBase):
 
         return sql, (apply_values + where_values)
 
-    def delete(self, t: type[E], **where: Unpack[WhereMapping]) -> None:
-        cur = self.db.cursor()
+    @classmethod
+    def delete(cls, t: type[E], **where: Unpack[WhereMapping]) -> None:
+        cur = cls.PROVIDER().db.cursor()
 
-        _ = cur.execute(*(self._delete_sql(t, **where)))
+        _ = cur.execute(*(cls._delete_sql(t, **where)))
 
-        self.db.commit()
+        cls.PROVIDER().db.commit()
         cur.close()
 
+    @classmethod
     def _delete_sql(
-        self, t: type[E], **where: Unpack[WhereMapping]
+        cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, list[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 

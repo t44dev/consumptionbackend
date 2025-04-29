@@ -10,7 +10,6 @@ from consumptionbackend.entities import *
 from consumptionbackend.database.sqlite.SQLiteDatabaseHandler import (
     SQLiteDatabaseHandler,
 )
-from consumptionbackend.database.sqlite.sql_utils import SQLiteType
 from tests.sqlite.providers import SQLiteMemoryDatabaseProvider, MemoryConfigProvider
 
 
@@ -22,9 +21,7 @@ class TestSQL(unittest.TestCase):
             MemoryConfigProvider()
         )
         _ = ConsumptionConfig()
-        SQLiteDatabaseHandler._PROVIDER = (  # pyright:ignore[reportPrivateUsage]
-            SQLiteMemoryDatabaseProvider
-        )
+        SQLiteDatabaseHandler.PROVIDER = SQLiteMemoryDatabaseProvider
         _ = SQLiteDatabaseHandler()
         return super().setUpClass()
 

@@ -1,15 +1,43 @@
 # stdlib
-from typing import final
+from typing import Unpack, final
+from collections.abc import Sequence
 
 # consumption
-from consumptionbackend.database.database_handling import (
-    DatabaseHandlerBase,
+from consumptionbackend.entities import Personnel
+from consumptionbackend.database import (
+    PersonnelHandlerBase,
+    PersonnelFieldsRequired,
+    WhereMapping,
+    ApplyMapping,
 )
 from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
-from consumptionbackend.database import PersonnelHandlerBase
 
 
 @final
 class SQLitePersonnelHandlerBase(PersonnelHandlerBase):
 
-    _HANDLER: type[DatabaseHandlerBase] = SQLiteDatabaseHandler
+    _HANDLER = SQLiteDatabaseHandler
+
+    @classmethod
+    def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Personnel:
+        return cls._HANDLER.new(Personnel, **values)
+
+    @classmethod
+    def find_by_id(cls, id: int) -> Personnel:
+        return cls._HANDLER.find_by_id(Personnel, id)
+
+    @classmethod
+    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Personnel]:
+        return cls._HANDLER.find(Personnel, **where)
+
+    @classmethod
+    def update(
+        cls,
+        where: WhereMapping,
+        apply: ApplyMapping,
+    ) -> Sequence[Personnel]:
+        return cls._HANDLER.update(Personnel, where, apply)
+
+    @classmethod
+    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+        return cls._HANDLER.delete(Personnel, **where)

@@ -1,51 +1,16 @@
 # stdlib
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Unpack, cast
+from typing import Unpack
 
 # consumption
-from .database_handling import (
-    ApplyMapping,
-    DatabaseHandlerBase,
-    EntityHandlerBase,
-    WhereMapping,
-)
-from .fields import (
-    PersonnelApplyMapping,
-    PersonnelFieldsRequired,
-    PersonnelWhereMapping,
-)
+from .database_handling import DatabaseHandlerBase
+from .fields import PersonnelFieldsRequired
 from consumptionbackend.entities import Personnel
 
 
-class PersonnelHandlerBase(EntityHandlerBase, ABC):
-
-    _HANDLER: type[DatabaseHandlerBase]
+class PersonnelHandlerBase(DatabaseHandlerBase[Personnel], ABC):
 
     @classmethod
+    @abstractmethod
     def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Personnel:
-        return cls._HANDLER().new(Personnel, **values)
-
-    @classmethod
-    def find_by_id(cls, id: int) -> Personnel:
-        return cls._HANDLER().find_by_id(Personnel, id)
-
-    @classmethod
-    def find(cls, **where: Unpack[PersonnelWhereMapping]) -> Sequence[Personnel]:
-        return cls._HANDLER().find(Personnel, **where)
-
-    @classmethod
-    def update(
-        cls,
-        where: PersonnelWhereMapping,
-        apply: PersonnelApplyMapping,
-    ) -> Sequence[Personnel]:
-        return cls._HANDLER().update(
-            Personnel,
-            cast(WhereMapping, cast(object, where)),
-            cast(ApplyMapping, apply),
-        )
-
-    @classmethod
-    def delete(cls, **where: Unpack[PersonnelWhereMapping]) -> None:
-        return cls._HANDLER().delete(Personnel, **where)
+        pass

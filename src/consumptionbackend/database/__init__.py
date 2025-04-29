@@ -15,7 +15,6 @@ from .fields import (
     TagWhereMapping,
 )
 from .queries import ApplyQuery, ApplyOperator, WhereQuery, WhereOperator
-from .database_provider import DatabaseProviderBase
 
 __all__ = [
     "ConsumableHandlerBase",
@@ -38,5 +37,4 @@ __all__ = [
     "ApplyOperator",
     "WhereQuery",
     "WhereOperator",
-    "DatabaseProviderBase",
 ]

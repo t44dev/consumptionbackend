@@ -1,15 +1,28 @@
 # stdlib
+from abc import ABC, abstractmethod
 from glob import glob
 from importlib import resources
 from pathlib import Path
 import sqlite3
 
 # consumption
-from consumptionbackend.config.config import ConsumptionConfig
-from consumptionbackend.database.database_provider import DatabaseProviderBase
+from consumptionbackend.config import ConsumptionConfig
+from consumptionbackend.utils import AbstractSingleton
 
 
-class SQLiteFileDatabaseProvider(DatabaseProviderBase):
+class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
+
+    def __init__(self) -> None:
+        self.db: sqlite3.Connection = self.__class__.setup()
+        self.db.row_factory = sqlite3.Row
+
+    @classmethod
+    @abstractmethod
+    def setup(cls) -> sqlite3.Connection:
+        pass
+
+
+class SQLiteFileDatabaseProvider(SQLiteDatabaseProviderBase):
 
     @classmethod
     def setup(cls) -> sqlite3.Connection:
@@ -19,13 +32,13 @@ class SQLiteFileDatabaseProvider(DatabaseProviderBase):
         if not db_path.is_file():
             db_path.parent.mkdir(exist_ok=True, parents=True)
             conn = sqlite3.connect(db_path)
-            cls.migrate(conn, None, config.CURRENT_VERSION)
+            SQLiteFileDatabaseProvider.migrate(conn, None, config.CURRENT_VERSION)
             return conn
 
         conn = sqlite3.connect(db_path)
         version = config["version"]
         if version != config.CURRENT_VERSION:
-            cls.migrate(conn, version, config.CURRENT_VERSION)
+            SQLiteFileDatabaseProvider.migrate(conn, version, config.CURRENT_VERSION)
             config["version"] = config.CURRENT_VERSION
             config.write()
 
