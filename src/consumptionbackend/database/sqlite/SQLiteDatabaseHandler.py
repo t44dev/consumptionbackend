@@ -43,11 +43,11 @@ class SQLiteDatabaseHandler:
     # TODO: Don't do this probably
     MEGATABLE_QUERY = f"""
     {TABLE_MAPPING[Consumable]} {to_shorthand(TABLE_MAPPING[Consumable])} 
-        JOIN {TABLE_MAPPING[Series]} {to_shorthand(TABLE_MAPPING[Series])}
+        FULL OUTER JOIN {TABLE_MAPPING[Series]} {to_shorthand(TABLE_MAPPING[Series])}
             ON {to_shorthand(TABLE_MAPPING[Series])}.id = {to_shorthand(TABLE_MAPPING[Consumable])}.series_id
-        JOIN {PERSONNEL_MAPPING_TABLE} {to_shorthand(PERSONNEL_MAPPING_TABLE)}
+        FULL OUTER JOIN {PERSONNEL_MAPPING_TABLE} {to_shorthand(PERSONNEL_MAPPING_TABLE)}
             ON {to_shorthand(PERSONNEL_MAPPING_TABLE)}.consumable_id = {to_shorthand(TABLE_MAPPING[Consumable])}.id
-        JOIN {TABLE_MAPPING[Personnel]} {to_shorthand(TABLE_MAPPING[Personnel])}
+        FULL OUTER JOIN {TABLE_MAPPING[Personnel]} {to_shorthand(TABLE_MAPPING[Personnel])}
             ON {to_shorthand(TABLE_MAPPING[Personnel])}.id = {to_shorthand(PERSONNEL_MAPPING_TABLE)}.personnel_id
     """
 
@@ -112,7 +112,12 @@ class SQLiteDatabaseHandler:
 
         cls.PROVIDER().db.commit()
         cur.close()
-        return list(map(lambda result: t(**result), results))
+        return list(
+            map(
+                lambda result: t(**result),
+                filter(lambda x: x["id"] is not None, results),
+            )
+        )
 
     @classmethod
     def _find_sql(
@@ -121,9 +126,9 @@ class SQLiteDatabaseHandler:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
         sql = f"""
-        SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.* 
+        SELECT DISTINCT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.* 
             FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
-            WHERE {where_query}
+            {where_query}
         """
 
         return sql, values
@@ -161,7 +166,7 @@ class SQLiteDatabaseHandler:
             WHERE id IN (
                 SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
-                WHERE {where_query}
+                {where_query}
             )
         RETURNING *
         """
@@ -188,7 +193,7 @@ class SQLiteDatabaseHandler:
             WHERE t.id IN (
                 SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
-                WHERE {where_query}
+                {where_query}
             )
         """
 
@@ -226,7 +231,9 @@ class SQLiteDatabaseHandler:
                     where_list.append(where_str)
                     values.append(sub_value)
 
-        return " AND ".join(where_list), values
+        if len(where_list) > 0:
+            return f"WHERE {' AND '.join(where_list)}", values
+        return "", values
 
     @classmethod
     def where_query_tags(cls, queries: list[WhereQuery[str]]) -> tuple[str, list[str]]:
