@@ -1,7 +1,7 @@
 # stdlib
 from abc import abstractmethod, ABC
 from typing import Any, Generic, TypeVar, TypedDict, Unpack
-from collections.abc import Sequence 
+from collections.abc import Sequence
 
 # consumption
 from .fields import (

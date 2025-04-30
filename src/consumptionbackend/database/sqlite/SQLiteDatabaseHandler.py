@@ -189,8 +189,8 @@ class SQLiteDatabaseHandler:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
         sql = f"""
-        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]} t
-            WHERE t.id IN (
+        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
+            WHERE id IN (
                 SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
                 {where_query}
