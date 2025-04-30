@@ -1,6 +1,7 @@
 # stdlib
 from dataclasses import dataclass
 from typing import NamedTuple
+from collections.abc import Sequence
 
 # consumption
 from .EntityBase import EntityBase
@@ -13,6 +14,6 @@ class Personnel(EntityBase):
     pseudonym: str | None
 
 
-class PersonnelRole(NamedTuple):
+class PersonnelRoles(NamedTuple):
     personnel: Personnel
-    role: str
+    role: Sequence[str]

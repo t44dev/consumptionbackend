@@ -110,7 +110,6 @@ class SQLiteDatabaseHandler:
             *(cls._find_sql(t, **where))
         ).fetchall()
 
-        cls.PROVIDER().db.commit()
         cur.close()
         return list(
             map(

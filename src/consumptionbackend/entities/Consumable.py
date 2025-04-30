@@ -1,6 +1,8 @@
 # stdlib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import NamedTuple
 
 # consumption
 from .EntityBase import EntityBase
@@ -26,3 +28,8 @@ class Consumable(EntityBase):
             self.start_date = datetime.fromtimestamp(self.start_date)
         if isinstance(self.end_date, (float, int)):
             self.end_date = datetime.fromtimestamp(self.end_date)
+
+
+class ConsumableRoles(NamedTuple):
+    consumable: Consumable
+    role: Sequence[str]
