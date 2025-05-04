@@ -1,6 +1,6 @@
 from .EntityBase import EntityBase
 from .Personnel import Personnel, PersonnelRoles
-from .Consumable import Consumable, ConsumableRoles
+from .Consumable import Consumable, ConsumablePersonnel, ConsumableRoles
 from .Series import Series
 from .Status import Status
 
@@ -11,5 +11,6 @@ __all__ = [
     "Consumable",
     "Series",
     "Status",
+    "ConsumablePersonnel",
     "ConsumableRoles",
 ]

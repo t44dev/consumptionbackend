@@ -4,9 +4,14 @@ from collections.abc import Sequence
 from typing import Unpack
 
 # consumption
-from .database_handling import DatabaseHandlerBase
+from .database_handling import DatabaseHandlerBase, WhereMapping
 from .fields import ConsumableFieldsRequired
-from consumptionbackend.entities import Consumable, Series, PersonnelRoles
+from consumptionbackend.entities import (
+    Consumable,
+    Series,
+    PersonnelRoles,
+    ConsumablePersonnel,
+)
 
 
 class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
@@ -23,5 +28,12 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
 
     @classmethod
     @abstractmethod
-    def personnel(cls, id: int) -> Sequence[PersonnelRoles]:
+    def personnel_by_id(cls, consumable_id: int) -> Sequence[PersonnelRoles]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def add_personnel(
+        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+    ) -> Sequence[ConsumablePersonnel]:
         pass

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 # consumption
+from .Personnel import PersonnelRoles
 from .EntityBase import EntityBase
 from .Status import Status
 
@@ -32,4 +33,9 @@ class Consumable(EntityBase):
 
 class ConsumableRoles(NamedTuple):
     consumable: Consumable
-    role: Sequence[str]
+    roles: Sequence[str]
+
+
+class ConsumablePersonnel(NamedTuple):
+    consumable: Consumable
+    personnel: Sequence[PersonnelRoles]

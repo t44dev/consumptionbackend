@@ -25,6 +25,7 @@ from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabasePro
 E = TypeVar("E", bound=EntityBase)
 
 
+# TODO: Use RETURNING more
 @final
 class SQLiteDatabaseHandler:
 

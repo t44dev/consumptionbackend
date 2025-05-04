@@ -6,15 +6,20 @@ from collections.abc import MutableMapping, MutableSequence, Sequence
 
 # consumption
 from consumptionbackend.database.fields import ConsumableApplyMapping
-from consumptionbackend.entities import Consumable, Series, PersonnelRoles
+from consumptionbackend.entities import (
+    Consumable,
+    Series,
+    PersonnelRoles,
+    ConsumablePersonnel,
+)
 from consumptionbackend.database import (
     ConsumableHandlerBase,
     ConsumableFieldsRequired,
     WhereMapping,
 )
+from consumptionbackend.entities.Personnel import Personnel
 from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
-from .sql_utils import SQLiteType
-from .PersonnelHandler import SQLitePersonnelHandler
+from .sql_utils import SQLiteType, to_shorthand
 
 
 @final
@@ -70,11 +75,11 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         return sql, [id]
 
     @classmethod
-    def personnel(cls, id: int) -> Sequence[PersonnelRoles]:
+    def personnel_by_id(cls, consumable_id: int) -> Sequence[PersonnelRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._personnel_sql(id))
+            *(cls._personnel_sql(consumable_id))
         ).fetchall()
 
         cur.close()
@@ -85,7 +90,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
             role = row["role"]
             mapping[p_id].append(role)
         return [
-            PersonnelRoles(SQLitePersonnelHandler.find_by_id(p_id), mapping[p_id])
+            PersonnelRoles(ph.SQLitePersonnelHandler.find_by_id(p_id), mapping[p_id])
             for p_id in mapping
         ]
 
@@ -98,3 +103,58 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         """
 
         return sql, [id]
+
+    @classmethod
+    def add_personnel(
+        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+    ) -> Sequence[ConsumablePersonnel]:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        result: Sequence[sqlite3.Row] = cur.execute(
+            *(cls._add_personnel_sql(consumable_where, personnel_where, role))
+        ).fetchall()
+
+        cls._HANDLER.PROVIDER().db.commit()
+        cur.close()
+        return [
+            ConsumablePersonnel(
+                cls.find_by_id(row["consumable_id"]),
+                cls.personnel_by_id(row["consumable_id"]),
+            )
+            for row in result
+        ]
+
+    @classmethod
+    def _add_personnel_sql(
+        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+    ) -> tuple[str, Sequence[SQLiteType]]:
+        consumable_where_query, consumable_values = cls._HANDLER.where_query(
+            consumable_where
+        )
+        personnel_where_query, personnel_values = cls._HANDLER.where_query(
+            personnel_where
+        )
+
+        sql = f"""
+        INSERT INTO {cls._HANDLER.PERSONNEL_MAPPING_TABLE} (consumable_id, personnel_id, role)
+            VALUES (
+                (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {consumable_where_query}
+                )
+                CROSS JOIN
+                (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Personnel])}.id as personnel_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {personnel_where_query}
+                )
+                CROSS JOIN
+                (
+                    SELECT ? as role
+                )
+            )
+        RETURNING *
+        """
+
+        return sql, consumable_values + personnel_values + [role]

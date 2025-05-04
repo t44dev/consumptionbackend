@@ -18,5 +18,5 @@ class PersonnelHandlerBase(DatabaseHandlerBase[Personnel], ABC):
 
     @classmethod
     @abstractmethod
-    def consumables(cls, id: int) -> Sequence[ConsumableRoles]:
+    def consumables_by_id(cls, personnel_id: int) -> Sequence[ConsumableRoles]:
         pass
