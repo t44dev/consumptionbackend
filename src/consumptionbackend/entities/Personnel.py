@@ -16,4 +16,4 @@ class Personnel(EntityBase):
 
 class PersonnelRoles(NamedTuple):
     personnel: Personnel
-    role: Sequence[str]
+    roles: Sequence[str]

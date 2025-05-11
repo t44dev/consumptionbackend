@@ -5,6 +5,7 @@ from typing import Unpack
 
 # consumption
 from .database_handling import DatabaseHandlerBase, WhereMapping
+from .queries import ApplyQuery
 from .fields import ConsumableFieldsRequired
 from consumptionbackend.entities import (
     Consumable,
@@ -33,7 +34,10 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
 
     @classmethod
     @abstractmethod
-    def add_personnel(
-        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+    def change_personnel(
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        roles: Sequence[ApplyQuery[str]],
     ) -> Sequence[ConsumablePersonnel]:
         pass

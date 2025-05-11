@@ -15,7 +15,7 @@ class ApplyOperator(IntEnum):
 @dataclass
 class ApplyQuery(Generic[T]):
     value: T
-    operator: ApplyOperator
+    operator: ApplyOperator = ApplyOperator.APPLY
 
 
 class WhereOperator(IntEnum):
@@ -31,4 +31,4 @@ class WhereOperator(IntEnum):
 @dataclass
 class WhereQuery(Generic[T]):
     value: T
-    operator: WhereOperator
+    operator: WhereOperator = WhereOperator.EQ

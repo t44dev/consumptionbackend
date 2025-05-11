@@ -2,9 +2,11 @@
 from collections import defaultdict
 import sqlite3
 from typing import Unpack, final
-from collections.abc import MutableMapping, MutableSequence, Sequence
+from collections.abc import MutableMapping, MutableSequence, MutableSet, Sequence, Set
 
 # consumption
+import consumptionbackend.database.sqlite.PersonnelHandler as ph
+from consumptionbackend.database.queries import ApplyOperator, ApplyQuery
 from consumptionbackend.database.fields import ConsumableApplyMapping
 from consumptionbackend.entities import (
     Consumable,
@@ -79,7 +81,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._personnel_sql(consumable_id))
+            *(cls._personnel_by_id_sql(consumable_id))
         ).fetchall()
 
         cur.close()
@@ -95,7 +97,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         ]
 
     @classmethod
-    def _personnel_sql(cls, id: int) -> tuple[str, list[SQLiteType]]:
+    def _personnel_by_id_sql(cls, id: int) -> tuple[str, list[SQLiteType]]:
         sql = f"""
         SELECT personnel_id as id, role
             FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}
@@ -105,28 +107,61 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         return sql, [id]
 
     @classmethod
-    def add_personnel(
-        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+    def change_personnel(
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        roles: Sequence[ApplyQuery[str]],
     ) -> Sequence[ConsumablePersonnel]:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+        add_roles: MutableSet[str] = set()
+        remove_roles: MutableSet[str] = set()
 
-        result: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._add_personnel_sql(consumable_where, personnel_where, role))
-        ).fetchall()
+        for role_query in roles:
+            match role_query.operator:
+                case ApplyOperator.APPLY | ApplyOperator.ADD:
+                    add_roles.add(role_query.value)
+                    if role_query.value in remove_roles:
+                        remove_roles.remove(role_query.value)
 
-        cls._HANDLER.PROVIDER().db.commit()
-        cur.close()
+                case ApplyOperator.SUB:
+                    remove_roles.add(role_query.value)
+                    if role_query.value in add_roles:
+                        add_roles.remove(role_query.value)
+
+        if len(add_roles) > 0:
+            cls._add_personnel(consumable_where, personnel_where, add_roles)
+        if len(remove_roles) > 0:
+            cls._remove_personnel(consumable_where, personnel_where, remove_roles)
+
+        consumables = cls.find(**consumable_where)
         return [
-            ConsumablePersonnel(
-                cls.find_by_id(row["consumable_id"]),
-                cls.personnel_by_id(row["consumable_id"]),
-            )
-            for row in result
+            ConsumablePersonnel(consumable, cls.personnel_by_id(consumable.id))
+            for consumable in consumables
         ]
 
     @classmethod
+    def _add_personnel(
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        roles: Set[str],
+    ) -> None:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        for role in roles:
+            _ = cur.execute(
+                *(cls._add_personnel_sql(consumable_where, personnel_where, role))
+            )
+
+        cls._HANDLER.PROVIDER().db.commit()
+        cur.close()
+
+    @classmethod
     def _add_personnel_sql(
-        cls, consumable_where: WhereMapping, personnel_where: WhereMapping, role: str
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        role: str,
     ) -> tuple[str, Sequence[SQLiteType]]:
         consumable_where_query, consumable_values = cls._HANDLER.where_query(
             consumable_where
@@ -136,8 +171,8 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         )
 
         sql = f"""
-        INSERT INTO {cls._HANDLER.PERSONNEL_MAPPING_TABLE} (consumable_id, personnel_id, role)
-            VALUES (
+        INSERT OR IGNORE INTO {cls._HANDLER.PERSONNEL_MAPPING_TABLE} (consumable_id, personnel_id, role)
+            SELECT * FROM 
                 (
                     SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
                     FROM {cls._HANDLER.MEGATABLE_QUERY}
@@ -153,8 +188,56 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
                 (
                     SELECT ? as role
                 )
-            )
-        RETURNING *
         """
 
         return sql, consumable_values + personnel_values + [role]
+
+    @classmethod
+    def _remove_personnel(
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        roles: Set[str],
+    ) -> None:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        _ = cur.execute(
+            *(cls._remove_personnel_sql(consumable_where, personnel_where, roles))
+        )
+
+        cls._HANDLER.PROVIDER().db.commit()
+        cur.close()
+
+    @classmethod
+    def _remove_personnel_sql(
+        cls,
+        consumable_where: WhereMapping,
+        personnel_where: WhereMapping,
+        roles: Set[str],
+    ) -> tuple[str, Sequence[SQLiteType]]:
+        consumable_where_query, consumable_values = cls._HANDLER.where_query(
+            consumable_where
+        )
+        personnel_where_query, personnel_values = cls._HANDLER.where_query(
+            personnel_where
+        )
+        roles_list = list(roles)
+        role_placeholders = ", ".join(["?" for _ in range(len(roles))])
+
+        sql = f"""
+        DELETE FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}
+            WHERE consumable_id IN (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {consumable_where_query}
+                )
+            AND personnel_id IN
+                (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Personnel])}.id as personnel_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {personnel_where_query}
+                )
+            AND role in ({role_placeholders})
+        """
+
+        return sql, consumable_values + personnel_values + roles_list
