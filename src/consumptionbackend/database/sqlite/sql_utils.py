@@ -31,7 +31,7 @@ def to_sqlite_operator(
     else:  # WhereQuery
         match query.operator:
             case WhereOperator.EQ:
-                return f"{column} = ?", value
+                return f"{column} {'IS' if value is None else '='} ?", value
             case WhereOperator.NEQ:
                 return f"{column} != ?", value
             case WhereOperator.GT:
