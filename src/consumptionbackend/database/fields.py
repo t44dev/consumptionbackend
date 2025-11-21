@@ -32,6 +32,7 @@ class ConsumableFieldsRequired(BaseFieldsRequired):
     rating: NotRequired[float | None]
     start_date: NotRequired[datetime | None]
     end_date: NotRequired[datetime | None]
+    tags: NotRequired[Sequence[str]]
 
 
 class ConsumableApplyMapping(TypedDict, total=False):
@@ -45,6 +46,7 @@ class ConsumableApplyMapping(TypedDict, total=False):
     rating: ApplyQuery[float | None]
     start_date: ApplyQuery[datetime | None]
     end_date: ApplyQuery[datetime | None]
+    tags: Sequence[ApplyQuery[str]]
 
 
 class ConsumableWhereMapping(BaseWhereMapping, total=False):

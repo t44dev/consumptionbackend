@@ -16,7 +16,6 @@ from consumptionbackend.entities import EntityBase
 E = TypeVar("E", bound=EntityBase)
 
 
-# TODO: These keys are the same as the SQLite table names... too coupled?
 class WhereMapping(TypedDict, total=False):
     consumables: ConsumableWhereMapping
     series: SeriesWhereMapping

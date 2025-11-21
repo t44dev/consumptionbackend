@@ -6,9 +6,7 @@ import unittest
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database import *
 from consumptionbackend.entities import *
-from consumptionbackend.database.sqlite.SQLiteDatabaseHandler import (
-    SQLiteDatabaseHandler,
-)
+from consumptionbackend.database.sqlite import SQLiteDatabaseHandler, ConsumableHandler
 from tests.sqlite.providers import SQLiteMemoryDatabaseProvider, MemoryConfigProvider
 
 
@@ -320,10 +318,128 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(stripped_sql, expected_sql)
         self.assertListEqual(new_values, expected_values)
 
+    def test_add_tags(self):
+        dtgt = datetime.datetime.fromtimestamp(9898)
+        dtlte = datetime.datetime.fromtimestamp(9999)
+        where: WhereMapping = {
+            "consumables": {
+                "status": [WhereQuery(Status.COMPLETED, WhereOperator.EQ)],
+                "end_date": [
+                    WhereQuery(dtgt, WhereOperator.GT),
+                    WhereQuery(dtlte, WhereOperator.LTE),
+                ],
+            },
+            "series": {"name": [WhereQuery("Lord of the Rings", WhereOperator.EQ)]},
+            "personnel": {
+                "first_name": [WhereQuery("John Ronald Reuel", WhereOperator.LIKE)],
+                "role": [WhereQuery("Author", WhereOperator.EQ)],
+            },
+            "consumable_tags": {
+                "tag": [
+                    WhereQuery("fun", WhereOperator.EQ),
+                    WhereQuery("cool", WhereOperator.EQ),
+                    WhereQuery("bad", WhereOperator.NEQ),
+                    WhereQuery("awesome", WhereOperator.EQ),
+                    WhereQuery("weak", WhereOperator.NEQ),
+                    WhereQuery("yawn", WhereOperator.NEQ),
+                ]
+            },
+        }
+        tags = ["bland", "fast", "yawn", "new"]
+
+        sql, values = (
+            ConsumableHandler._add_tags_sql(  # pyright: ignore[reportPrivateUsage]
+                where, tags
+            )
+        )
+
+        stripped_sql = " ".join(sql.split())
+        expected_sql = "INSERT OR IGNORE INTO consumable_tags (consumable_id, tag) SELECT * FROM ( SELECT c.id as consumable_id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) ) CROSS JOIN (VALUES (?), (?), (?), (?))"
+        expected_values = [
+            4,
+            dtgt.timestamp(),
+            dtlte.timestamp(),
+            "Lord of the Rings",
+            "%john ronald reuel%",
+            "Author",
+            "fun",
+            "cool",
+            "awesome",
+            "bad",
+            "weak",
+            "yawn",
+            "bland",
+            "fast",
+            "yawn",
+            "new",
+        ]
+
+        self.assertEqual(stripped_sql, expected_sql)
+        self.assertListEqual(values, expected_values)
+
+    def test_remove_tags(self):
+        dtgt = datetime.datetime.fromtimestamp(9898)
+        dtlte = datetime.datetime.fromtimestamp(9999)
+        where: WhereMapping = {
+            "consumables": {
+                "status": [WhereQuery(Status.COMPLETED, WhereOperator.EQ)],
+                "end_date": [
+                    WhereQuery(dtgt, WhereOperator.GT),
+                    WhereQuery(dtlte, WhereOperator.LTE),
+                ],
+            },
+            "series": {"name": [WhereQuery("Lord of the Rings", WhereOperator.EQ)]},
+            "personnel": {
+                "first_name": [WhereQuery("John Ronald Reuel", WhereOperator.LIKE)],
+                "role": [WhereQuery("Author", WhereOperator.EQ)],
+            },
+            "consumable_tags": {
+                "tag": [
+                    WhereQuery("fun", WhereOperator.EQ),
+                    WhereQuery("cool", WhereOperator.EQ),
+                    WhereQuery("bad", WhereOperator.NEQ),
+                    WhereQuery("awesome", WhereOperator.EQ),
+                    WhereQuery("weak", WhereOperator.NEQ),
+                    WhereQuery("yawn", WhereOperator.NEQ),
+                ]
+            },
+        }
+        tags = ["bland", "fast", "yawn", "new"]
+
+        sql, values = (
+            ConsumableHandler._remove_tags_sql(  # pyright: ignore[reportPrivateUsage]
+                where, tags
+            )
+        )
+
+        stripped_sql = " ".join(sql.split())
+        expected_sql = "DELETE FROM consumable_tags WHERE consumable_id IN ( SELECT c.id as consumable_id FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id WHERE c.status = ? AND c.end_date > ? AND c.end_date <= ? AND s.name = ? AND LOWER(p.first_name) LIKE ? AND cp.role = ? AND c.id IN ( SELECT tgw.consumable_id FROM consumable_tags tgw WHERE tgw.tag IN (? ? ?) AND tgw.tag NOT IN (? ? ?) ) ) AND tag IN (?, ?, ?, ?)"
+        expected_values = [
+            4,
+            dtgt.timestamp(),
+            dtlte.timestamp(),
+            "Lord of the Rings",
+            "%john ronald reuel%",
+            "Author",
+            "fun",
+            "cool",
+            "awesome",
+            "bad",
+            "weak",
+            "yawn",
+            "bland",
+            "fast",
+            "yawn",
+            "new",
+        ]
+
+        self.assertEqual(stripped_sql, expected_sql)
+        self.assertListEqual(values, expected_values)
+
     @classmethod
     def tearDownClass(cls) -> None:
         x = ConsumptionConfig()
         del x
         x = SQLiteDatabaseHandler()
         del x
-        return super().setUpClass()
+        return super().tearDownClass()

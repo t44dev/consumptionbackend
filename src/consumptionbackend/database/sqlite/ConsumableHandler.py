@@ -18,6 +18,7 @@ from consumptionbackend.database import (
     ConsumableHandlerBase,
     ConsumableFieldsRequired,
     WhereMapping,
+    WhereQuery,
 )
 from consumptionbackend.entities.Personnel import Personnel
 from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
@@ -31,7 +32,12 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
     @classmethod
     def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Consumable:
-        return cls._HANDLER.new(Consumable, **values)
+        tags = list(map(lambda tag: ApplyQuery(tag), values.pop("tags", [])))
+
+        new = cls._HANDLER.new(Consumable, **values)
+        cls.change_tags({"consumables": {"id": [WhereQuery(new.id)]}}, tags)
+
+        return new
 
     @classmethod
     def find_by_id(cls, id: int) -> Consumable:
@@ -47,7 +53,12 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         where: WhereMapping,
         apply: ConsumableApplyMapping,
     ) -> Sequence[Consumable]:
-        return cls._HANDLER.update(Consumable, where, apply)
+        tags = apply.pop("tags", [])
+
+        updated = cls._HANDLER.update(Consumable, where, apply)
+        cls.change_tags(where, tags)
+
+        return updated
 
     @classmethod
     def delete(cls, **where: Unpack[WhereMapping]) -> None:
@@ -241,3 +252,83 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         """
 
         return sql, consumable_values + personnel_values + roles_list
+
+    @classmethod
+    def change_tags(cls, where: WhereMapping, tags: Sequence[ApplyQuery[str]]) -> None:
+        add_tags: MutableSet[str] = set()
+        remove_tags: MutableSet[str] = set()
+
+        for tag_query in tags:
+            match tag_query.operator:
+                case ApplyOperator.APPLY | ApplyOperator.ADD:
+                    add_tags.add(tag_query.value)
+                    if tag_query.value in remove_tags:
+                        remove_tags.remove(tag_query.value)
+
+                case ApplyOperator.SUB:
+                    remove_tags.add(tag_query.value)
+                    if tag_query.value in add_tags:
+                        add_tags.remove(tag_query.value)
+
+        if len(add_tags) > 0:
+            cls._add_tags(where, add_tags)
+        if len(remove_tags) > 0:
+            cls._remove_tags(where, remove_tags)
+
+    @classmethod
+    def _add_tags(cls, where: WhereMapping, tags: Set[str]) -> None:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        _ = cur.execute(*(cls._add_tags_sql(where, list(tags))))
+
+        cls._HANDLER.PROVIDER().db.commit()
+        cur.close()
+
+    @classmethod
+    def _add_tags_sql(
+        cls, where: WhereMapping, tags: Sequence[str]
+    ) -> tuple[str, list[SQLiteType]]:
+        where_query, where_values = cls._HANDLER.where_query(where)
+        tag_placeholders = ", ".join(["(?)" for _ in range(len(tags))])
+
+        sql = f"""
+        INSERT OR IGNORE INTO {cls._HANDLER.TAGS_MAPPING_TABLE} (consumable_id, tag)
+            SELECT * FROM
+                (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {where_query}
+                )
+                CROSS JOIN
+                (VALUES {tag_placeholders})
+        """
+
+        return sql, where_values + list(tags)
+
+    @classmethod
+    def _remove_tags(cls, where: WhereMapping, tags: Set[str]) -> None:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        _ = cur.execute(*(cls._remove_tags_sql(where, list(tags))))
+
+        cls._HANDLER.PROVIDER().db.commit()
+        cur.close()
+
+    @classmethod
+    def _remove_tags_sql(
+        cls, where: WhereMapping, tags: Sequence[str]
+    ) -> tuple[str, list[SQLiteType]]:
+        where_query, where_values = cls._HANDLER.where_query(where)
+        tag_placeholders = ", ".join(["?" for _ in range(len(tags))])
+
+        sql = f"""
+        DELETE FROM {cls._HANDLER.TAGS_MAPPING_TABLE}
+            WHERE consumable_id IN (
+                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    {where_query}
+                )
+            AND tag IN ({tag_placeholders})
+        """
+
+        return sql, where_values + list(tags)
