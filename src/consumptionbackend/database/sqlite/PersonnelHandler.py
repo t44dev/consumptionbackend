@@ -1,13 +1,12 @@
 # stdlib
 from collections import defaultdict
 import sqlite3
-from typing import Unpack, final
+from typing import Unpack, final, override
 from collections.abc import MutableMapping, MutableSequence, Sequence
 
 # consumption
-import consumptionbackend.database.sqlite.ConsumableHandler as ch
 from consumptionbackend.database.fields import PersonnelApplyMapping
-from consumptionbackend.entities import Personnel, ConsumableRoles
+from consumptionbackend.entities import EntityRoles, Id, Personnel
 from consumptionbackend.database import (
     PersonnelHandlerBase,
     PersonnelFieldsRequired,
@@ -22,32 +21,43 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
 
     _HANDLER = SQLiteDatabaseHandler
 
+    @override
     @classmethod
-    def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Personnel:
+    def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Id:
         return cls._HANDLER.new(Personnel, **values)
 
+    @override
     @classmethod
-    def find_by_id(cls, id: int) -> Personnel:
+    def find_by_id(cls, id: Id) -> Personnel:
         return cls._HANDLER.find_by_id(Personnel, id)
 
+    @override
+    @classmethod
+    def find_by_ids(cls, ids: Sequence[Id]) -> Sequence[Personnel]:
+        return cls._HANDLER.find_by_ids(Personnel, ids)
+
+    @override
     @classmethod
     def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Personnel]:
         return cls._HANDLER.find(Personnel, **where)
 
+    @override
     @classmethod
     def update(
         cls,
         where: WhereMapping,
         apply: PersonnelApplyMapping,
-    ) -> Sequence[Personnel]:
+    ) -> Sequence[Id]:
         return cls._HANDLER.update(Personnel, where, apply)
 
+    @override
     @classmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[WhereMapping]) -> int:
         return cls._HANDLER.delete(Personnel, **where)
 
+    @override
     @classmethod
-    def consumables_by_id(cls, personnel_id: int) -> Sequence[ConsumableRoles]:
+    def consumables_by_id(cls, personnel_id: Id) -> Sequence[EntityRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -56,19 +66,16 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
 
         cur.close()
 
-        mapping: MutableMapping[int, MutableSequence[str]] = defaultdict(list)
+        mapping: MutableMapping[Id, MutableSequence[str]] = defaultdict(list)
         for row in results:
             c_id = row["id"]
             role = row["role"]
             mapping[c_id].append(role)
-        return [
-            ConsumableRoles(ch.SQLiteConsumableHandler.find_by_id(c_id), mapping[c_id])
-            for c_id in mapping
-        ]
+        return [EntityRoles(c_id, mapping[c_id]) for c_id in mapping]
 
     @classmethod
     def _consumables_by_id_sql(
-        cls, personnel_id: int
+        cls, personnel_id: Id
     ) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT consumable_id as id, role

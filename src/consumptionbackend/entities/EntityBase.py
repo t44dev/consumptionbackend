@@ -1,11 +1,22 @@
 # stdlib
 from abc import ABC
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import NamedTuple, override
+
+# consumption
+from .types import Id
 
 
 @dataclass
 class EntityBase(ABC):
-    id: int
+    id: Id
 
+    @override
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+class EntityRoles(NamedTuple):
+    id: Id
+    roles: Sequence[str]

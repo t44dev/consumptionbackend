@@ -12,7 +12,6 @@ from .fields import (
     PersonnelFieldsRequired,
     PersonnelApplyMapping,
     PersonnelWhereMapping,
-    TagWhereMapping,
 )
 from .queries import ApplyQuery, ApplyOperator, WhereQuery, WhereOperator
 
@@ -31,7 +30,6 @@ __all__ = [
     "PersonnelFieldsRequired",
     "PersonnelApplyMapping",
     "PersonnelWhereMapping",
-    "TagWhereMapping",
     "ApplyQuery",
     "ApplyOperator",
     "WhereQuery",

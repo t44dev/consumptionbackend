@@ -5,7 +5,7 @@ from typing import NotRequired, TypedDict
 
 # consumption
 from .queries import ApplyQuery, WhereQuery
-from consumptionbackend.entities import Status
+from consumptionbackend.entities import Id, Status
 
 # Base
 
@@ -15,14 +15,14 @@ class BaseFieldsRequired(TypedDict):
 
 
 class BaseWhereMapping(TypedDict, total=False):
-    id: Sequence[WhereQuery[int]]
+    id: Sequence[WhereQuery[Id]]
 
 
 # Consumables
 
 
 class ConsumableFieldsRequired(BaseFieldsRequired):
-    series_id: NotRequired[int]
+    series_id: NotRequired[Id]
     name: str
     type: str
     status: NotRequired[Status]
@@ -36,7 +36,7 @@ class ConsumableFieldsRequired(BaseFieldsRequired):
 
 
 class ConsumableApplyMapping(TypedDict, total=False):
-    series_id: ApplyQuery[int]
+    series_id: ApplyQuery[Id]
     name: ApplyQuery[str]
     type: ApplyQuery[str]
     status: ApplyQuery[Status]
@@ -50,7 +50,7 @@ class ConsumableApplyMapping(TypedDict, total=False):
 
 
 class ConsumableWhereMapping(BaseWhereMapping, total=False):
-    series_id: Sequence[WhereQuery[int]]
+    series_id: Sequence[WhereQuery[Id]]
     name: Sequence[WhereQuery[str]]
     type: Sequence[WhereQuery[str]]
     status: Sequence[WhereQuery[Status]]
@@ -60,6 +60,7 @@ class ConsumableWhereMapping(BaseWhereMapping, total=False):
     rating: Sequence[WhereQuery[float | None]]
     start_date: Sequence[WhereQuery[datetime | None]]
     end_date: Sequence[WhereQuery[datetime | None]]
+    tags: Sequence[WhereQuery[str]]
 
 
 # Series
@@ -97,10 +98,3 @@ class PersonnelWhereMapping(BaseWhereMapping, total=False):
     last_name: Sequence[WhereQuery[str]]
     pseudonym: Sequence[WhereQuery[str]]
     role: Sequence[WhereQuery[str]]
-
-
-# Tag
-
-
-class TagWhereMapping(TypedDict, total=False):
-    tag: Sequence[WhereQuery[str]]

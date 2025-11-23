@@ -1,7 +1,7 @@
 # stdlib
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Unpack
+from typing import Unpack, override
 
 # consumption
 from .database_handling import DatabaseHandlerBase, WhereMapping
@@ -9,27 +9,28 @@ from .queries import ApplyQuery
 from .fields import ConsumableFieldsRequired
 from consumptionbackend.entities import (
     Consumable,
+    EntityRoles,
+    Id,
     Series,
-    PersonnelRoles,
-    ConsumablePersonnel,
 )
 
 
 class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
 
+    @override
     @classmethod
     @abstractmethod
-    def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Consumable:
+    def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Id:
         pass
 
     @classmethod
     @abstractmethod
-    def series(cls, id: int) -> Series:
+    def series(cls, id: Id) -> Series:
         pass
 
     @classmethod
     @abstractmethod
-    def personnel_by_id(cls, consumable_id: int) -> Sequence[PersonnelRoles]:
+    def personnel_by_id(cls, consumable_id: Id) -> Sequence[EntityRoles]:
         pass
 
     @classmethod
@@ -39,5 +40,5 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Sequence[ApplyQuery[str]],
-    ) -> Sequence[ConsumablePersonnel]:
+    ) -> Sequence[Id]:
         pass

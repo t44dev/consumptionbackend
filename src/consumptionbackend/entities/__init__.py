@@ -1,16 +1,16 @@
-from .EntityBase import EntityBase
-from .Personnel import Personnel, PersonnelRoles
-from .Consumable import Consumable, ConsumablePersonnel, ConsumableRoles
+from .EntityBase import EntityBase, EntityRoles
+from .Personnel import Personnel
+from .Consumable import Consumable
 from .Series import Series
 from .Status import Status
+from .types import Id
 
 __all__ = [
+    "Id",
     "EntityBase",
+    "EntityRoles",
     "Personnel",
-    "PersonnelRoles",
     "Consumable",
     "Series",
     "Status",
-    "ConsumablePersonnel",
-    "ConsumableRoles",
 ]

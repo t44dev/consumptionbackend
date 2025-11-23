@@ -4,6 +4,7 @@ from glob import glob
 from importlib import resources
 from pathlib import Path
 import sqlite3
+from typing import override
 
 # consumption
 from consumptionbackend.config import ConsumptionConfig
@@ -24,6 +25,7 @@ class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
 
 class SQLiteFileDatabaseProvider(SQLiteDatabaseProviderBase):
 
+    @override
     @classmethod
     def setup(cls) -> sqlite3.Connection:
         config = ConsumptionConfig()

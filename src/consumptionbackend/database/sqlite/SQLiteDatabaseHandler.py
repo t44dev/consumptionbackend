@@ -8,11 +8,12 @@ from typing import Any, TypeVar, Unpack, final
 from .sql_utils import (
     SQLiteType,
     fix_value,
+    placeholders,
     to_shorthand,
     to_sqlite_operator,
     validate_column_name,
 )
-from consumptionbackend.entities import Consumable, Series, Personnel
+from consumptionbackend.entities import Consumable, Id, Series, Personnel
 from consumptionbackend.database import (
     WhereMapping,
     ApplyQuery,
@@ -25,7 +26,6 @@ from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabasePro
 E = TypeVar("E", bound=EntityBase)
 
 
-# TODO: Use RETURNING more
 @final
 class SQLiteDatabaseHandler:
 
@@ -41,7 +41,7 @@ class SQLiteDatabaseHandler:
     TAGS_MAPPING_TABLE = "consumable_tags"
     PERSONNEL_MAPPING_TABLE = "consumable_personnel"
 
-    # TODO: Don't do this probably
+    # TODO: Refactor to avoid this
     MEGATABLE_QUERY = f"""
     {TABLE_MAPPING[Consumable]} {to_shorthand(TABLE_MAPPING[Consumable])} 
         FULL OUTER JOIN {TABLE_MAPPING[Series]} {to_shorthand(TABLE_MAPPING[Series])}
@@ -53,22 +53,22 @@ class SQLiteDatabaseHandler:
     """
 
     @classmethod
-    def new(cls, t: type[E], **values: Any) -> E:
+    def new(cls, t: type[E], **values: Any) -> Id:
         cur = cls.PROVIDER().db.cursor()
 
-        row = cur.execute(*(cls._new_sql(t, **values))).lastrowid
+        id = cur.execute(*(cls._new_sql(t, **values))).lastrowid
 
-        if row is None:
+        if id is None:
             raise RuntimeError("No row id after insertion.")
 
         cls.PROVIDER().db.commit()
         cur.close()
-        return cls.find_by_id(t, row)
+
+        return id
 
     @classmethod
     def _new_sql(cls, t: type[E], **values: Any) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
-        placeholders = ", ".join(["?" for _ in range(len(values))])
 
         new_values: list[SQLiteType] = []
 
@@ -79,12 +79,12 @@ class SQLiteDatabaseHandler:
             labels.append(key)
         labels_str = ", ".join(labels)
 
-        sql = f"INSERT INTO {table} ({labels_str}) VALUES ({placeholders})"
+        sql = f"INSERT INTO {table} ({labels_str}) VALUES ({placeholders(len(values))})"
 
         return sql, new_values
 
     @classmethod
-    def find_by_id(cls, t: type[E], id: int) -> E:
+    def find_by_id(cls, t: type[E], id: Id) -> E:
         cur = cls.PROVIDER().db.cursor()
 
         result: sqlite3.Row | None = cur.execute(
@@ -95,13 +95,34 @@ class SQLiteDatabaseHandler:
             raise RuntimeError("No result on find by id.")
 
         cur.close()
+
         return t(**result)
 
     @classmethod
-    def _find_by_id_sql(cls, t: type[E], id: int) -> tuple[str, list[SQLiteType]]:
+    def _find_by_id_sql(cls, t: type[E], id: Id) -> tuple[str, list[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id = ?", [id]
+
+    @classmethod
+    def find_by_ids(cls, t: type[E], id: Sequence[Id]) -> Sequence[E]:
+        cur = cls.PROVIDER().db.cursor()
+
+        results: list[sqlite3.Row] = cur.execute(
+            *(cls._find_by_ids_sql(t, id))
+        ).fetchall()
+
+        cur.close()
+
+        return [t(**result) for result in results]
+
+    @classmethod
+    def _find_by_ids_sql(
+        cls, t: type[E], ids: Sequence[Id]
+    ) -> tuple[str, list[SQLiteType]]:
+        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+
+        return f"SELECT * FROM {table} WHERE id IN ({placeholders(len(ids))})", [*ids]
 
     @classmethod
     def find(cls, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
@@ -112,12 +133,8 @@ class SQLiteDatabaseHandler:
         ).fetchall()
 
         cur.close()
-        return list(
-            map(
-                lambda result: t(**result),
-                filter(lambda x: x["id"] is not None, results),
-            )
-        )
+
+        return [t(**result) for result in results]
 
     @classmethod
     def _find_sql(
@@ -139,16 +156,18 @@ class SQLiteDatabaseHandler:
         t: type[E],
         where: WhereMapping,
         apply: Any,
-    ) -> Sequence[E]:
+    ) -> Sequence[Id]:
+        if len(apply) == 0:
+            return []
+
         cur = cls.PROVIDER().db.cursor()
 
-        results: list[sqlite3.Row] = cur.execute(
-            *(cls._update_sql(t, where, apply))
-        ).fetchall()
+        ids: list[Id] = cur.execute(*(cls._update_sql(t, where, apply))).fetchall()
 
         cls.PROVIDER().db.commit()
         cur.close()
-        return list(map(lambda result: t(**result), results))
+
+        return ids
 
     @classmethod
     def _update_sql(
@@ -168,19 +187,21 @@ class SQLiteDatabaseHandler:
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
                 {where_query}
             )
-        RETURNING *
+        RETURNING {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id
         """
 
         return sql, (apply_values + where_values)
 
     @classmethod
-    def delete(cls, t: type[E], **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, t: type[E], **where: Unpack[WhereMapping]) -> int:
         cur = cls.PROVIDER().db.cursor()
 
-        _ = cur.execute(*(cls._delete_sql(t, **where)))
+        result: int = cur.execute(*(cls._delete_sql(t, **where))).fetchone()
 
         cls.PROVIDER().db.commit()
         cur.close()
+
+        return result
 
     @classmethod
     def _delete_sql(
@@ -189,11 +210,14 @@ class SQLiteDatabaseHandler:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
         sql = f"""
-        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
-            WHERE id IN (
-                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
-                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
-                {where_query}
+        SELECT COUNT(*) FROM (
+            DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
+                WHERE id IN (
+                    SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
+                    FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                    {where_query}
+                )
+            RETURNING 1
             )
         """
 
@@ -211,19 +235,19 @@ class SQLiteDatabaseHandler:
                 validate_column_name(column)
 
                 queries: list[WhereQuery[Any]] = mapping[column]
-                # TODO: Can this be avoided?
                 shorthand_table_name = (
-                    to_shorthand(table_name)
-                    if column != "role"
-                    else to_shorthand(SQLiteDatabaseHandler.PERSONNEL_MAPPING_TABLE)
+                    to_shorthand(SQLiteDatabaseHandler.PERSONNEL_MAPPING_TABLE)
+                    if column == "role"
+                    else to_shorthand(table_name)
                 )
                 qualified_column = f"{shorthand_table_name}.{column}"
 
-                # Tags are a unique case
-                if column == "tag":
+                # Tags must be ORed over and so are handled uniquely with "IN"
+                if column == "tags":
                     tag_where, tag_values = cls.where_query_tags(queries)
-                    where_list.append(tag_where)
-                    values = values + tag_values
+                    if len(tag_values) > 0:
+                        where_list.append(tag_where)
+                        values = values + tag_values
                     continue
 
                 for query in queries:
@@ -251,16 +275,14 @@ class SQLiteDatabaseHandler:
             )
         )
 
-        assert len(eq_tags) > 0 or len(neq_tags) > 0
-
         tags_where: list[str] = []
         if len(eq_tags) > 0:
             tags_where.append(
-                f"{tag_shorthand}.tag IN ({' '.join('?' for _ in range(len(eq_tags)))})"
+                f"{tag_shorthand}.tag IN ({', '.join('?' for _ in range(len(eq_tags)))})"
             )
         if len(neq_tags) > 0:
             tags_where.append(
-                f"{tag_shorthand}.tag NOT IN ({' '.join('?' for _ in range(len(neq_tags)))})"
+                f"{tag_shorthand}.tag NOT IN ({', '.join('?' for _ in range(len(neq_tags)))})"
             )
 
         tag_where = f"""

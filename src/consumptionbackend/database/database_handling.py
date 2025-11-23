@@ -8,9 +8,8 @@ from .fields import (
     ConsumableWhereMapping,
     PersonnelWhereMapping,
     SeriesWhereMapping,
-    TagWhereMapping,
 )
-from consumptionbackend.entities import EntityBase
+from consumptionbackend.entities import EntityBase, Id
 
 
 E = TypeVar("E", bound=EntityBase)
@@ -20,19 +19,23 @@ class WhereMapping(TypedDict, total=False):
     consumables: ConsumableWhereMapping
     series: SeriesWhereMapping
     personnel: PersonnelWhereMapping
-    consumable_tags: TagWhereMapping
 
 
 class DatabaseHandlerBase(Generic[E], ABC):
 
     @classmethod
     @abstractmethod
-    def new(cls, **values: Any) -> E:
+    def new(cls, **values: Any) -> Id:
         pass
 
     @classmethod
     @abstractmethod
-    def find_by_id(cls, id: int) -> E:
+    def find_by_id(cls, id: Id) -> E:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def find_by_ids(cls, ids: Sequence[Id]) -> Sequence[E]:
         pass
 
     @classmethod
@@ -46,10 +49,10 @@ class DatabaseHandlerBase(Generic[E], ABC):
         cls,
         where: WhereMapping,
         apply: Any,
-    ) -> Sequence[E]:
+    ) -> Sequence[Id]:
         pass
 
     @classmethod
     @abstractmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> None:
+    def delete(cls, **where: Unpack[WhereMapping]) -> int:
         pass

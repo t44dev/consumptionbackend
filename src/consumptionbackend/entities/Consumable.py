@@ -1,18 +1,16 @@
 # stdlib
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import NamedTuple
 
 # consumption
-from .Personnel import PersonnelRoles
 from .EntityBase import EntityBase
 from .Status import Status
+from .types import Id
 
 
 @dataclass
 class Consumable(EntityBase):
-    series_id: int
+    series_id: Id
     name: str
     type: str
     status: Status
@@ -29,13 +27,3 @@ class Consumable(EntityBase):
             self.start_date = datetime.fromtimestamp(self.start_date)
         if isinstance(self.end_date, (float, int)):
             self.end_date = datetime.fromtimestamp(self.end_date)
-
-
-class ConsumableRoles(NamedTuple):
-    consumable: Consumable
-    roles: Sequence[str]
-
-
-class ConsumablePersonnel(NamedTuple):
-    consumable: Consumable
-    personnel: Sequence[PersonnelRoles]

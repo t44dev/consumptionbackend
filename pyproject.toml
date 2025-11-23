@@ -10,7 +10,6 @@ exclude = [
 [tool.basedpyright]
 reportAny = false
 reportExplicitAny = false
-reportImplicitOverride = false
 
 [project]
 name = "consumptionbackend"

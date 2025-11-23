@@ -4,15 +4,17 @@ from enum import IntEnum
 from functools import lru_cache
 from typing import Any, TypeAlias
 
+# consumption
 from consumptionbackend.database.queries import (
     ApplyOperator,
     ApplyQuery,
     WhereOperator,
     WhereQuery,
 )
+from consumptionbackend.entities import Id
 
 
-SQLiteType: TypeAlias = None | int | float | str
+SQLiteType: TypeAlias = None | Id | int | float | str
 
 
 def to_sqlite_operator(
@@ -68,3 +70,8 @@ def validate_column_name(column: str) -> None:
 @lru_cache(maxsize=10)
 def to_shorthand(table_name: str) -> str:
     return "".join(map(lambda x: x[0], table_name.split("_")))
+
+
+def placeholders(count: int, placeholder: str = "?") -> str:
+    placeholders = ", ".join([placeholder for _ in range(count)])
+    return placeholders
