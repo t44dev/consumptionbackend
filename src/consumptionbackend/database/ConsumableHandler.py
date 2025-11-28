@@ -30,7 +30,12 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
 
     @classmethod
     @abstractmethod
-    def personnel_by_id(cls, consumable_id: Id) -> Sequence[EntityRoles]:
+    def personnel(cls, consumable_id: Id) -> Sequence[EntityRoles]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def tags(cls, consumable_id: Id) -> Sequence[str]:
         pass
 
     @classmethod

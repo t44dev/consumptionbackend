@@ -103,11 +103,11 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
     @override
     @classmethod
-    def personnel_by_id(cls, consumable_id: Id) -> Sequence[EntityRoles]:
+    def personnel(cls, consumable_id: Id) -> Sequence[EntityRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._personnel_by_id_sql(consumable_id))
+            *(cls._personnel_sql(consumable_id))
         ).fetchall()
 
         cur.close()
@@ -120,14 +120,37 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         return [EntityRoles(p_id, mapping[p_id]) for p_id in mapping]
 
     @classmethod
-    def _personnel_by_id_sql(cls, id: Id) -> tuple[str, Sequence[SQLiteType]]:
+    def _personnel_sql(cls, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT personnel_id as id, role
             FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}
             WHERE consumable_id = ?
         """
 
-        return sql, [id]
+        return sql, [consumable_id]
+
+    @override
+    @classmethod
+    def tags(cls, consumable_id: Id) -> Sequence[str]:
+        cur = cls._HANDLER.PROVIDER().db.cursor()
+
+        results: Sequence[sqlite3.Row] = cur.execute(
+            *(cls._tags_sql(consumable_id))
+        ).fetchall()
+
+        cur.close()
+
+        return [row["tag"] for row in results]
+
+    @classmethod
+    def _tags_sql(cls, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
+        sql = f"""
+        SELECT tag
+            FROM {cls._HANDLER.TAGS_MAPPING_TABLE}
+            WHERE consumable_id = ?
+        """
+
+        return sql, [consumable_id]
 
     @override
     @classmethod
