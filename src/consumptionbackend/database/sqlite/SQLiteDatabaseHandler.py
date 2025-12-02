@@ -1,8 +1,7 @@
 # stdlib
 import sqlite3
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, MutableSequence, Sequence
 from typing import Any, TypeVar, Unpack, final
-
 
 # consumption
 from .sql_utils import (
@@ -21,6 +20,7 @@ from consumptionbackend.database import (
     WhereQuery,
 )
 from consumptionbackend.entities import EntityBase
+from consumptionbackend.utils import NotFoundException
 from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 
 E = TypeVar("E", bound=EntityBase)
@@ -67,12 +67,12 @@ class SQLiteDatabaseHandler:
         return id
 
     @classmethod
-    def _new_sql(cls, t: type[E], **values: Any) -> tuple[str, list[SQLiteType]]:
+    def _new_sql(cls, t: type[E], **values: Any) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
-        new_values: list[SQLiteType] = []
+        new_values: Sequence[SQLiteType] = []
 
-        labels: list[str] = []
+        labels: Sequence[str] = []
         for key, value in values.items():
             validate_column_name(key)
             new_values.append(fix_value(value))
@@ -92,14 +92,14 @@ class SQLiteDatabaseHandler:
         ).fetchone()
 
         if result is None:
-            raise RuntimeError("No result on find by id.")
+            raise NotFoundException(f"{t} with {id=} not found")
 
         cur.close()
 
         return t(**result)
 
     @classmethod
-    def _find_by_id_sql(cls, t: type[E], id: Id) -> tuple[str, list[SQLiteType]]:
+    def _find_by_id_sql(cls, t: type[E], id: Id) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id = ?", [id]
@@ -108,7 +108,7 @@ class SQLiteDatabaseHandler:
     def find_by_ids(cls, t: type[E], id: Sequence[Id]) -> Sequence[E]:
         cur = cls.PROVIDER().db.cursor()
 
-        results: list[sqlite3.Row] = cur.execute(
+        results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._find_by_ids_sql(t, id))
         ).fetchall()
 
@@ -119,7 +119,7 @@ class SQLiteDatabaseHandler:
     @classmethod
     def _find_by_ids_sql(
         cls, t: type[E], ids: Sequence[Id]
-    ) -> tuple[str, list[SQLiteType]]:
+    ) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id IN ({placeholders(len(ids))})", [*ids]
@@ -128,18 +128,19 @@ class SQLiteDatabaseHandler:
     def find(cls, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
         cur = cls.PROVIDER().db.cursor()
 
-        results: list[sqlite3.Row] = cur.execute(
+        results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._find_sql(t, **where))
         ).fetchall()
 
         cur.close()
 
-        return [t(**result) for result in results]
+        # TODO: Improve filtering of NONE row
+        return [t(**result) for result in results if result["id"] is not None]
 
     @classmethod
     def _find_sql(
         cls, t: type[E], **where: Unpack[WhereMapping]
-    ) -> tuple[str, list[SQLiteType]]:
+    ) -> tuple[str, Sequence[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
         sql = f"""
@@ -162,12 +163,14 @@ class SQLiteDatabaseHandler:
 
         cur = cls.PROVIDER().db.cursor()
 
-        ids: list[Id] = cur.execute(*(cls._update_sql(t, where, apply))).fetchall()
+        results: Sequence[sqlite3.Row] = cur.execute(
+            *(cls._update_sql(t, where, apply))
+        ).fetchall()
 
         cls.PROVIDER().db.commit()
         cur.close()
 
-        return ids
+        return [row["id"] for row in results]
 
     @classmethod
     def _update_sql(
@@ -175,7 +178,7 @@ class SQLiteDatabaseHandler:
         t: type[E],
         where: WhereMapping,
         apply: Any,
-    ) -> tuple[str, list[SQLiteType]]:
+    ) -> tuple[str, Sequence[SQLiteType]]:
         where_query, where_values = SQLiteDatabaseHandler.where_query(where)
         apply_query, apply_values = SQLiteDatabaseHandler.apply_query(apply)
 
@@ -187,46 +190,46 @@ class SQLiteDatabaseHandler:
                 FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
                 {where_query}
             )
-        RETURNING {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id
+        RETURNING id
         """
 
-        return sql, (apply_values + where_values)
+        return sql, [*apply_values, *where_values]
 
     @classmethod
     def delete(cls, t: type[E], **where: Unpack[WhereMapping]) -> int:
         cur = cls.PROVIDER().db.cursor()
 
-        result: int = cur.execute(*(cls._delete_sql(t, **where))).fetchone()
+        results: Sequence[sqlite3.Row] = cur.execute(
+            *(cls._delete_sql(t, **where))
+        ).fetchall()
 
         cls.PROVIDER().db.commit()
         cur.close()
 
-        return result
+        return len(results)
 
     @classmethod
     def _delete_sql(
         cls, t: type[E], **where: Unpack[WhereMapping]
-    ) -> tuple[str, list[SQLiteType]]:
+    ) -> tuple[str, Sequence[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
 
         sql = f"""
-        SELECT COUNT(*) FROM (
-            DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
-                WHERE id IN (
-                    SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
-                    FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
-                    {where_query}
-                )
-            RETURNING 1
+        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
+            WHERE id IN (
+                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
+                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                {where_query}
             )
+        RETURNING id
         """
 
         return sql, values
 
     @classmethod
-    def where_query(cls, where: WhereMapping) -> tuple[str, list[SQLiteType]]:
-        where_list: list[str] = []
-        values: list[SQLiteType] = []
+    def where_query(cls, where: WhereMapping) -> tuple[str, Sequence[SQLiteType]]:
+        where_list: Sequence[str] = []
+        values: Sequence[SQLiteType] = []
         for table_name in where:
             mapping: Mapping[str, Any] = where.get(table_name, None)
             assert mapping is not None
@@ -234,7 +237,7 @@ class SQLiteDatabaseHandler:
             for column in mapping:
                 validate_column_name(column)
 
-                queries: list[WhereQuery[Any]] = mapping[column]
+                queries: Sequence[WhereQuery[Any]] = mapping[column]
                 shorthand_table_name = (
                     to_shorthand(SQLiteDatabaseHandler.PERSONNEL_MAPPING_TABLE)
                     if column == "role"
@@ -242,12 +245,12 @@ class SQLiteDatabaseHandler:
                 )
                 qualified_column = f"{shorthand_table_name}.{column}"
 
-                # Tags must be ORed over and so are handled uniquely with "IN"
+                # Tags handled uniquely
                 if column == "tags":
                     tag_where, tag_values = cls.where_query_tags(queries)
                     if len(tag_values) > 0:
                         where_list.append(tag_where)
-                        values = values + tag_values
+                        values = [*values, *tag_values]
                     continue
 
                 for query in queries:
@@ -260,8 +263,9 @@ class SQLiteDatabaseHandler:
         return "", values
 
     @classmethod
-    def where_query_tags(cls, queries: list[WhereQuery[str]]) -> tuple[str, list[str]]:
-        tag_shorthand = "tgw"
+    def where_query_tags(
+        cls, queries: Sequence[WhereQuery[str]]
+    ) -> tuple[str, Sequence[SQLiteType]]:
         eq_tags = list(
             map(
                 lambda x: x.value,
@@ -275,29 +279,26 @@ class SQLiteDatabaseHandler:
             )
         )
 
-        tags_where: list[str] = []
+        where: MutableSequence[str] = []
+        values: MutableSequence[SQLiteType] = []
         if len(eq_tags) > 0:
-            tags_where.append(
-                f"{tag_shorthand}.tag IN ({', '.join('?' for _ in range(len(eq_tags)))})"
+            where.append(
+                f"(SELECT COUNT(*) FROM {cls.TAGS_MAPPING_TABLE} ti WHERE {to_shorthand(cls.TABLE_MAPPING[Consumable])}.id = ti.consumable_id AND ti.tag IN ({', '.join('?' for _ in range(len(eq_tags)))})) = ?"
             )
+            values = [*values, *eq_tags, len(eq_tags)]
+
         if len(neq_tags) > 0:
-            tags_where.append(
-                f"{tag_shorthand}.tag NOT IN ({', '.join('?' for _ in range(len(neq_tags)))})"
+            where.append(
+                f"NOT EXISTS (SELECT 1 FROM {cls.TAGS_MAPPING_TABLE} te WHERE {to_shorthand(cls.TABLE_MAPPING[Consumable])}.id = te.consumable_id AND te.tag IN ({', '.join('?' for _ in range(len(neq_tags)))}))"
             )
+            values = [*values, *neq_tags]
 
-        tag_where = f"""
-            {to_shorthand(cls.TABLE_MAPPING[Consumable])}.id IN (
-                SELECT {tag_shorthand}.consumable_id FROM {cls.TAGS_MAPPING_TABLE} {tag_shorthand}
-                WHERE {' AND '.join(tags_where)}
-            )
-            """
-
-        return tag_where, (eq_tags + neq_tags)
+        return " AND ".join(where), values
 
     @classmethod
-    def apply_query(cls, apply: Any) -> tuple[str, list[SQLiteType]]:
-        apply_list: list[str] = []
-        values: list[SQLiteType] = []
+    def apply_query(cls, apply: Any) -> tuple[str, Sequence[SQLiteType]]:
+        apply_list: Sequence[str] = []
+        values: Sequence[SQLiteType] = []
         for column in apply:
             validate_column_name(column)
 

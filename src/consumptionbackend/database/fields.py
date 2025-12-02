@@ -88,9 +88,9 @@ class PersonnelFieldsRequired(BaseFieldsRequired):
 
 
 class PersonnelApplyMapping(TypedDict, total=False):
-    first_name: ApplyQuery[str]
-    last_name: ApplyQuery[str]
-    pseudonym: ApplyQuery[str]
+    first_name: ApplyQuery[str | None]
+    last_name: ApplyQuery[str | None]
+    pseudonym: ApplyQuery[str | None]
 
 
 class PersonnelWhereMapping(BaseWhereMapping, total=False):

@@ -20,9 +20,10 @@ class SingletonMeta(type):
 
 class SingletonBase:
 
-    def __del__(self) -> None:
-        if self.__class__ in SingletonMeta.s_instances:
-            del SingletonMeta.s_instances[self.__class__]
+    @classmethod
+    def reset(cls) -> None:
+        if cls in SingletonMeta.s_instances:
+            del SingletonMeta.s_instances[cls]
 
 
 class Singleton(SingletonBase, metaclass=SingletonMeta):

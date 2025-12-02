@@ -57,11 +57,11 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
 
     @override
     @classmethod
-    def consumables_by_id(cls, personnel_id: Id) -> Sequence[EntityRoles]:
+    def consumables(cls, personnel_id: Id) -> Sequence[EntityRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._consumables_by_id_sql(personnel_id))
+            *(cls._consumables_sql(personnel_id))
         ).fetchall()
 
         cur.close()
@@ -74,9 +74,7 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
         return [EntityRoles(c_id, mapping[c_id]) for c_id in mapping]
 
     @classmethod
-    def _consumables_by_id_sql(
-        cls, personnel_id: Id
-    ) -> tuple[str, Sequence[SQLiteType]]:
+    def _consumables_sql(cls, personnel_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT consumable_id as id, role
             FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}

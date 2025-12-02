@@ -235,7 +235,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
                 )
         """
 
-        return sql, consumable_values + personnel_values + [role]
+        return sql, (*consumable_values, *personnel_values, role)
 
     @classmethod
     def _remove_personnel(
@@ -281,10 +281,10 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
                     FROM {cls._HANDLER.MEGATABLE_QUERY}
                     {personnel_where_query}
                 )
-            AND role in ({placeholders(len(roles))})
+            AND role IN ({placeholders(len(roles))})
         """
 
-        return sql, consumable_values + personnel_values + roles_list
+        return sql, [*consumable_values, *personnel_values, *roles_list]
 
     @classmethod
     def _change_tags(cls, ids: Sequence[Id], tags: Sequence[ApplyQuery[str]]) -> None:
