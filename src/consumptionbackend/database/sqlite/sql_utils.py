@@ -45,7 +45,7 @@ def to_sqlite_operator(
             case WhereOperator.LIKE:
                 if not isinstance(value, str):
                     raise ValidationException(
-                        "LIKE operator value must be of type str", value
+                        "LIKE operator value must be of type str.", value
                     )
                 lower_value = f"%{str.lower(value)}%"
                 return f"LOWER({column}) LIKE ?", lower_value
