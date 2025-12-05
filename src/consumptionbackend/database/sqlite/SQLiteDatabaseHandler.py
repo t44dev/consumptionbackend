@@ -159,7 +159,7 @@ class SQLiteDatabaseHandler:
         apply: Any,
     ) -> Sequence[Id]:
         if len(apply) == 0:
-            return []
+            return [e.id for e in cls.find(t, **where)]
 
         cur = cls.PROVIDER().db.cursor()
 

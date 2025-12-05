@@ -64,11 +64,9 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         apply: ConsumableApplyMapping,
     ) -> Sequence[Id]:
         tags = apply.pop("tags", [])
-        # TODO: Avoid find
-        consumables = cls.find(**where)
 
         updated = cls._HANDLER.update(Consumable, where, apply)
-        cls._change_tags([c.id for c in consumables], tags)
+        cls._change_tags(updated, tags)
 
         return updated
 
@@ -180,7 +178,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         if len(remove_roles) > 0:
             cls._remove_personnel(consumable_where, personnel_where, remove_roles)
 
-        # TODO: Avoid use find
+        # TODO: Avoid using find
         consumables = cls.find(**consumable_where)
         return [c.id for c in consumables]
 
