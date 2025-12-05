@@ -1,9 +1,7 @@
-# stdlib
+import unittest
 from collections.abc import MutableSequence
 from datetime import datetime
-import unittest
 
-# consumption
 from consumptionbackend.database import (
     ApplyOperator,
     ApplyQuery,
@@ -19,7 +17,9 @@ from consumptionbackend.database.sqlite import (
 )
 from consumptionbackend.entities import Id, Status
 from consumptionbackend.utils import NotFoundException
+
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED, SERIES_REQUIRED
+
 from .base import SQLiteIntegrationTestBase
 
 

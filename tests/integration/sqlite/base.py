@@ -1,19 +1,17 @@
-# stdlib
-from collections.abc import Sequence
 import unittest
+from collections.abc import Sequence
 from typing import Callable, TypeVar, override
 
-# consumption
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
-from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
+
 from tests.providers.config import MemoryConfigProvider
+from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
 
 T = TypeVar("T")
 
 
 class SQLiteIntegrationTestBase(unittest.TestCase):
-
     @override
     @classmethod
     def setUpClass(cls):

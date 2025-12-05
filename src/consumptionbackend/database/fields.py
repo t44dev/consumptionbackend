@@ -1,11 +1,10 @@
-# stdlib
 from collections.abc import Sequence
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
-# consumption
-from .queries import ApplyQuery, WhereQuery
 from consumptionbackend.entities import Id, Status
+
+from .queries import ApplyQuery, WhereQuery
 
 # Base
 

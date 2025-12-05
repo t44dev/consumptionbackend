@@ -1,8 +1,6 @@
-# stdlib
 from dataclasses import dataclass
 from datetime import datetime
 
-# consumption
 from .EntityBase import EntityBase
 from .Status import Status
 from .types import Id

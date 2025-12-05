@@ -1,6 +1,6 @@
+from .Consumable import Consumable
 from .EntityBase import EntityBase, EntityRoles
 from .Personnel import Personnel
-from .Consumable import Consumable
 from .Series import Series
 from .Status import Status
 from .types import Id

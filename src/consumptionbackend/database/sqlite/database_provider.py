@@ -1,18 +1,15 @@
-# stdlib
+import sqlite3
 from abc import ABC, abstractmethod
 from glob import glob
 from importlib import resources
 from pathlib import Path
-import sqlite3
 from typing import override
 
-# consumption
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.utils import AbstractSingleton
 
 
 class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
-
     def __init__(self) -> None:
         self.db: sqlite3.Connection = self.__class__.setup()
         self.db.row_factory = sqlite3.Row
@@ -24,7 +21,6 @@ class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
 
 
 class SQLiteFileDatabaseProvider(SQLiteDatabaseProviderBase):
-
     @override
     @classmethod
     def setup(cls) -> sqlite3.Connection:

@@ -1,9 +1,9 @@
-# stdlib
 import unittest
 
-# consumption
 from consumptionbackend.database.sqlite.ConsumableHandler import SQLiteConsumableHandler
+
 from tests.test_data import COMPLEX_WHERE, COMPLEX_WHERE_VALUES
+
 from .base import SQLiteUnitTestBase
 
 
@@ -12,10 +12,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
         consumable_id = 44
         expected_sql = "SELECT * FROM series t1 WHERE t1.id = ( SELECT t2.series_id FROM consumables t2 WHERE t2.id = ? )"
 
-        (sql, values) = (
-            SQLiteConsumableHandler._series_sql(  # pyright: ignore[reportPrivateUsage]
-                consumable_id
-            )
+        (sql, values) = SQLiteConsumableHandler._series_sql(  # pyright: ignore[reportPrivateUsage]
+            consumable_id
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -25,10 +23,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
         consumable_id = 44_444
         expected_sql = "SELECT personnel_id as id, role FROM consumable_personnel WHERE consumable_id = ?"
 
-        (sql, values) = (
-            SQLiteConsumableHandler._personnel_sql(  # pyright: ignore[reportPrivateUsage]
-                consumable_id
-            )
+        (sql, values) = SQLiteConsumableHandler._personnel_sql(  # pyright: ignore[reportPrivateUsage]
+            consumable_id
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -38,10 +34,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
         consumable_id = 444_444
         expected_sql = "SELECT tag FROM consumable_tags WHERE consumable_id = ?"
 
-        (sql, values) = (
-            SQLiteConsumableHandler._tags_sql(  # pyright: ignore[reportPrivateUsage]
-                consumable_id
-            )
+        (sql, values) = SQLiteConsumableHandler._tags_sql(  # pyright: ignore[reportPrivateUsage]
+            consumable_id
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -59,10 +53,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
             " ) CROSS JOIN ( SELECT ? as role )"
         )
 
-        (sql, values) = (
-            SQLiteConsumableHandler._add_personnel_sql(  # pyright: ignore[reportPrivateUsage]
-                COMPLEX_WHERE, COMPLEX_WHERE, role
-            )
+        (sql, values) = SQLiteConsumableHandler._add_personnel_sql(  # pyright: ignore[reportPrivateUsage]
+            COMPLEX_WHERE, COMPLEX_WHERE, role
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -82,10 +74,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
             " ) AND role IN (?, ?, ?)"
         )
 
-        (sql, values) = (
-            SQLiteConsumableHandler._remove_personnel_sql(  # pyright: ignore[reportPrivateUsage]
-                COMPLEX_WHERE, COMPLEX_WHERE, roles
-            )
+        (sql, values) = SQLiteConsumableHandler._remove_personnel_sql(  # pyright: ignore[reportPrivateUsage]
+            COMPLEX_WHERE, COMPLEX_WHERE, roles
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -98,10 +88,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
         tags = ["tag1", "tag2", "tag3"]
         expected_sql = "INSERT OR IGNORE INTO consumable_tags (consumable_id, tag) SELECT * FROM (VALUES (?), (?), (?), (?)) CROSS JOIN (VALUES (?), (?), (?))"
 
-        (sql, values) = (
-            SQLiteConsumableHandler._add_tags_sql(  # pyright: ignore[reportPrivateUsage]
-                ids, tags
-            )
+        (sql, values) = SQLiteConsumableHandler._add_tags_sql(  # pyright: ignore[reportPrivateUsage]
+            ids, tags
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -112,10 +100,8 @@ class TestSQLiteConsumableHandler(SQLiteUnitTestBase):
         tags = ["tag1", "tag2", "tag3"]
         expected_sql = "DELETE FROM consumable_tags WHERE consumable_id IN (?, ?, ?, ?) AND tag IN (?, ?, ?)"
 
-        (sql, values) = (
-            SQLiteConsumableHandler._remove_tags_sql(  # pyright: ignore[reportPrivateUsage]
-                ids, tags
-            )
+        (sql, values) = SQLiteConsumableHandler._remove_tags_sql(  # pyright: ignore[reportPrivateUsage]
+            ids, tags
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)

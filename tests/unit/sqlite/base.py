@@ -1,14 +1,13 @@
-# stdlib
 import unittest
 from collections.abc import Mapping, Sequence
-from typing import override, Any
+from typing import Any, override
 
-# consumption
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
 from consumptionbackend.database.sqlite.sql_utils import fix_value
-from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
+
 from tests.providers.config import MemoryConfigProvider
+from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
 
 
 class SQLiteUnitTestBase(unittest.TestCase):

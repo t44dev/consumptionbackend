@@ -1,23 +1,21 @@
-# stdlib
 import sqlite3
-from typing import Unpack, final, override
 from collections.abc import Sequence
+from typing import Unpack, final, override
 
-# consumption
-from consumptionbackend.database.fields import SeriesApplyMapping
-from consumptionbackend.entities import Consumable, Id, Series
 from consumptionbackend.database import (
-    SeriesHandlerBase,
     SeriesFieldsRequired,
+    SeriesHandlerBase,
     WhereMapping,
 )
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
+from consumptionbackend.database.fields import SeriesApplyMapping
+from consumptionbackend.entities import Consumable, Id, Series
+
 from .sql_utils import SQLiteType
+from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
 
 @final
 class SQLiteSeriesHandler(SeriesHandlerBase):
-
     _HANDLER = SQLiteDatabaseHandler
 
     @override

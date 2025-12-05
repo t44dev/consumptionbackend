@@ -1,7 +1,7 @@
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 from .ConsumableHandler import SQLiteConsumableHandler as ConsumableHandler
-from .SeriesHandler import SQLiteSeriesHandler as SeriesHandler
 from .PersonnelHandler import SQLitePersonnelHandler as PersonnelHandler
+from .SeriesHandler import SQLiteSeriesHandler as SeriesHandler
+from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
 __all__ = [
     "SQLiteDatabaseHandler",

@@ -1,8 +1,6 @@
-# stdlib
 import sqlite3
 from typing import override
 
-# consumption
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite.database_provider import (
     SQLiteFileDatabaseProvider,
@@ -10,7 +8,6 @@ from consumptionbackend.database.sqlite.database_provider import (
 
 
 class SQLiteMemoryDatabaseProvider(SQLiteFileDatabaseProvider):
-
     @override
     @classmethod
     def setup(cls) -> sqlite3.Connection:

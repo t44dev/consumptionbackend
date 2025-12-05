@@ -1,4 +1,3 @@
-# stdlib
 from abc import ABCMeta
 from collections.abc import MutableMapping
 from typing import Any, TypeVar, override
@@ -19,7 +18,6 @@ class SingletonMeta(type):
 
 
 class SingletonBase:
-
     @classmethod
     def reset(cls) -> None:
         if cls in SingletonMeta.s_instances:
@@ -31,7 +29,6 @@ class Singleton(SingletonBase, metaclass=SingletonMeta):
 
 
 class AbstractSingletonMeta(SingletonMeta, ABCMeta):
-
     @override
     def __call__(cls: type[S], *args: Any, **kwargs: dict[str, Any]) -> S:
         if cls not in AbstractSingletonMeta.s_instances:

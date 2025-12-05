@@ -1,12 +1,15 @@
-# stdlib
-from collections import defaultdict
-from collections.abc import MutableSequence, MutableSet, Sequence, MutableMapping, Set
 import sqlite3
+from collections import defaultdict
+from collections.abc import MutableMapping, MutableSequence, MutableSet, Sequence, Set
 from typing import Unpack, final, override
 
-# consumption
-from consumptionbackend.database.queries import ApplyOperator, ApplyQuery
+from consumptionbackend.database import (
+    ConsumableFieldsRequired,
+    ConsumableHandlerBase,
+    WhereMapping,
+)
 from consumptionbackend.database.fields import ConsumableApplyMapping
+from consumptionbackend.database.queries import ApplyOperator, ApplyQuery
 from consumptionbackend.entities import (
     Consumable,
     EntityRoles,
@@ -14,18 +17,13 @@ from consumptionbackend.entities import (
     Personnel,
     Series,
 )
-from consumptionbackend.database import (
-    ConsumableHandlerBase,
-    ConsumableFieldsRequired,
-    WhereMapping,
-)
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
+
 from .sql_utils import SQLiteType, placeholders, to_shorthand
+from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
 
 @final
 class SQLiteConsumableHandler(ConsumableHandlerBase):
-
     _HANDLER = SQLiteDatabaseHandler
 
     @override

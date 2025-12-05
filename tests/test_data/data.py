@@ -1,7 +1,5 @@
-# stdlib
 from datetime import datetime
 
-# consumption
 from consumptionbackend.database import (
     ConsumableFieldsRequired,
     PersonnelFieldsRequired,
@@ -11,7 +9,6 @@ from consumptionbackend.database import (
     WhereQuery,
 )
 from consumptionbackend.entities import Status
-
 
 CONSUMABLE_REQUIRED: ConsumableFieldsRequired = {
     "series_id": 4,

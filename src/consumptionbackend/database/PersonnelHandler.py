@@ -1,16 +1,14 @@
-# stdlib
 from abc import ABC, abstractmethod
-from typing import Unpack, override
 from collections.abc import Sequence
+from typing import Unpack, override
 
-# consumption
+from consumptionbackend.entities import EntityRoles, Id, Personnel
+
 from .database_handling import DatabaseHandlerBase
 from .fields import PersonnelFieldsRequired
-from consumptionbackend.entities import EntityRoles, Id, Personnel
 
 
 class PersonnelHandlerBase(DatabaseHandlerBase[Personnel], ABC):
-
     @override
     @classmethod
     @abstractmethod

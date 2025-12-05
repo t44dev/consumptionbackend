@@ -1,18 +1,15 @@
-# stdlib
 from pathlib import Path
 from typing import Any, final
 
-# 3rd party
 from platformdirs import user_config_path, user_data_path
 
-# consumption
 from consumptionbackend.utils import Singleton
-from .config_provider import ConfigProvider, FileConfigProvider, ConfigDict
+
+from .config_provider import ConfigDict, ConfigProvider, FileConfigProvider
 
 
 @final
 class ConsumptionConfig(Singleton):
-
     CURRENT_VERSION: str = "3.0.0"
     CONFIG_DIR: Path = user_config_path("consumption")
     DATA_DIR: Path = user_data_path("consumption")

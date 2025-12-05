@@ -1,10 +1,8 @@
-# stdlib
 from datetime import datetime
 from enum import IntEnum
 from functools import lru_cache
 from typing import Any, TypeAlias
 
-# consumption
 from consumptionbackend.database.queries import (
     ApplyOperator,
     ApplyQuery,
@@ -13,7 +11,6 @@ from consumptionbackend.database.queries import (
 )
 from consumptionbackend.entities import Id
 from consumptionbackend.utils import ValidationException
-
 
 SQLiteType: TypeAlias = None | Id | int | float | str
 

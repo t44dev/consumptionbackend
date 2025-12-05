@@ -1,18 +1,16 @@
-# stdlib
 import unittest
 
-# consumption
 from consumptionbackend.database import (
     ApplyOperator,
     ApplyQuery,
 )
+from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
 from consumptionbackend.entities import (
     Consumable,
     Personnel,
     Series,
 )
-from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
-from tests.unit.sqlite.base import SQLiteUnitTestBase
+
 from tests.test_data import (
     COMPLEX_WHERE,
     COMPLEX_WHERE_VALUES,
@@ -22,10 +20,10 @@ from tests.test_data import (
     SIMPLE_WHERE,
     SIMPLE_WHERE_VALUES,
 )
+from tests.unit.sqlite.base import SQLiteUnitTestBase
 
 
 class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
-
     def test_new(self):
         cases = {
             Consumable: (
@@ -41,10 +39,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
 
         for entity, (fields, expected_sql) in cases.items():
             with self.subTest(entity=entity, fields=fields, expected_sql=expected_sql):
-                (sql, values) = (
-                    SQLiteDatabaseHandler._new_sql(  # pyright: ignore[reportPrivateUsage]
-                        entity, **fields
-                    )
+                (sql, values) = SQLiteDatabaseHandler._new_sql(  # pyright: ignore[reportPrivateUsage]
+                    entity, **fields
                 )
 
                 self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -60,10 +56,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
         }
 
         for entity, (id, expected_sql) in cases.items():
-            (sql, value) = (
-                SQLiteDatabaseHandler._find_by_id_sql(  # pyright: ignore[reportPrivateUsage]
-                    entity, id
-                )
+            (sql, value) = SQLiteDatabaseHandler._find_by_id_sql(  # pyright: ignore[reportPrivateUsage]
+                entity, id
             )
 
             self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -83,10 +77,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
         }
 
         for entity, (ids, expected_sql) in cases.items():
-            (sql, values) = (
-                SQLiteDatabaseHandler._find_by_ids_sql(  # pyright: ignore[reportPrivateUsage]
-                    entity, ids
-                )
+            (sql, values) = SQLiteDatabaseHandler._find_by_ids_sql(  # pyright: ignore[reportPrivateUsage]
+                entity, ids
             )
 
             self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -99,10 +91,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " WHERE LOWER(c.name) LIKE ? AND c.completions > ?"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
-                Consumable, **SIMPLE_WHERE
-            )
+        (sql, values) = SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
+            Consumable, **SIMPLE_WHERE
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -115,10 +105,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " WHERE c.id > ? AND c.id <= ? AND c.series_id >= ? AND c.series_id < ? AND LOWER(c.name) LIKE ? AND c.type = ? AND c.status >= ? AND c.status < ? AND c.parts > ? AND c.parts < ? AND c.max_parts > ? AND c.max_parts < ? AND c.completions > ? AND c.completions < ? AND c.rating > ? AND c.rating > ? AND c.rating > ? AND c.start_date > ? AND c.start_date < ? AND c.end_date = ? AND p.id > ? AND p.id <= ? AND LOWER(p.first_name) LIKE ? AND p.last_name = ? AND LOWER(p.pseudonym) LIKE ? AND cp.role = ? AND s.id > ? AND s.id <= ? AND LOWER(s.name) LIKE ?"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
-                Personnel, **COMPLEX_WHERE
-            )
+        (sql, values) = SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
+            Personnel, **COMPLEX_WHERE
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -130,10 +118,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             "FROM consumables c FULL OUTER JOIN series s ON s.id = c.series_id FULL OUTER JOIN consumable_personnel cp ON cp.consumable_id = c.id FULL OUTER JOIN personnel p ON p.id = cp.personnel_id"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
-                Series
-            )
+        (sql, values) = SQLiteDatabaseHandler._find_sql(  # pyright: ignore[reportPrivateUsage]
+            Series
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -148,10 +134,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " ) RETURNING id"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._update_sql(  # pyright: ignore[reportPrivateUsage]
-                Consumable, SIMPLE_WHERE, apply
-            )
+        (sql, values) = SQLiteDatabaseHandler._update_sql(  # pyright: ignore[reportPrivateUsage]
+            Consumable, SIMPLE_WHERE, apply
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -171,10 +155,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " ) RETURNING id"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._update_sql(  # pyright: ignore[reportPrivateUsage]
-                Personnel, COMPLEX_WHERE, apply
-            )
+        (sql, values) = SQLiteDatabaseHandler._update_sql(  # pyright: ignore[reportPrivateUsage]
+            Personnel, COMPLEX_WHERE, apply
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -188,10 +170,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " ) RETURNING id"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._delete_sql(  # pyright: ignore[reportPrivateUsage]
-                Series, **SIMPLE_WHERE
-            )
+        (sql, values) = SQLiteDatabaseHandler._delete_sql(  # pyright: ignore[reportPrivateUsage]
+            Series, **SIMPLE_WHERE
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)
@@ -205,10 +185,8 @@ class TestSQLiteDatabaseHandler(SQLiteUnitTestBase):
             " ) RETURNING id"
         )
 
-        (sql, values) = (
-            SQLiteDatabaseHandler._delete_sql(  # pyright: ignore[reportPrivateUsage]
-                Consumable, **COMPLEX_WHERE
-            )
+        (sql, values) = SQLiteDatabaseHandler._delete_sql(  # pyright: ignore[reportPrivateUsage]
+            Consumable, **COMPLEX_WHERE
         )
 
         self.assertEqual(SQLiteUnitTestBase.normalise_sql(sql), expected_sql)

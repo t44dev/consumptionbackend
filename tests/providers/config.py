@@ -1,14 +1,11 @@
-# stdlib
 from typing import final, override
 
-# consumption
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.config.config_provider import ConfigDict, ConfigProvider
 
 
 @final
 class MemoryConfigProvider(ConfigProvider):
-
     def __init__(self) -> None:
         self.config: ConfigDict = ConsumptionConfig.DEFAULT_CONFIG
 

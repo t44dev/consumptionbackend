@@ -1,9 +1,7 @@
-# stdlib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import cast
-from collections.abc import Sequence
 
-# consumption
 from .EntityBase import EntityBase
 
 

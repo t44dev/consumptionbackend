@@ -1,9 +1,17 @@
-# stdlib
 import sqlite3
 from collections.abc import Mapping, MutableSequence, Sequence
 from typing import Any, TypeVar, Unpack, final
 
-# consumption
+from consumptionbackend.database import (
+    ApplyQuery,
+    WhereMapping,
+    WhereOperator,
+    WhereQuery,
+)
+from consumptionbackend.entities import Consumable, EntityBase, Id, Personnel, Series
+from consumptionbackend.utils import NotFoundException
+
+from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 from .sql_utils import (
     SQLiteType,
     fix_value,
@@ -12,23 +20,12 @@ from .sql_utils import (
     to_sqlite_operator,
     validate_column_name,
 )
-from consumptionbackend.entities import Consumable, Id, Series, Personnel
-from consumptionbackend.database import (
-    WhereMapping,
-    ApplyQuery,
-    WhereOperator,
-    WhereQuery,
-)
-from consumptionbackend.entities import EntityBase
-from consumptionbackend.utils import NotFoundException
-from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 
 E = TypeVar("E", bound=EntityBase)
 
 
 @final
 class SQLiteDatabaseHandler:
-
     PROVIDER: type[SQLiteDatabaseProviderBase] = SQLiteFileDatabaseProvider
 
     TABLE_MAPPING = {

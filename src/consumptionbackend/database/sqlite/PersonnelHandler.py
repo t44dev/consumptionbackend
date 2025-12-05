@@ -1,24 +1,22 @@
-# stdlib
-from collections import defaultdict
 import sqlite3
-from typing import Unpack, final, override
+from collections import defaultdict
 from collections.abc import MutableMapping, MutableSequence, Sequence
+from typing import Unpack, final, override
 
-# consumption
-from consumptionbackend.database.fields import PersonnelApplyMapping
-from consumptionbackend.entities import EntityRoles, Id, Personnel
 from consumptionbackend.database import (
-    PersonnelHandlerBase,
     PersonnelFieldsRequired,
+    PersonnelHandlerBase,
     WhereMapping,
 )
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
+from consumptionbackend.database.fields import PersonnelApplyMapping
+from consumptionbackend.entities import EntityRoles, Id, Personnel
+
 from .sql_utils import SQLiteType
+from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
 
 @final
 class SQLitePersonnelHandler(PersonnelHandlerBase):
-
     _HANDLER = SQLiteDatabaseHandler
 
     @override

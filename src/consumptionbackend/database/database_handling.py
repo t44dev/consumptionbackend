@@ -1,16 +1,14 @@
-# stdlib
-from abc import abstractmethod, ABC
-from typing import Any, Generic, TypeVar, TypedDict, Unpack
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import Any, Generic, TypedDict, TypeVar, Unpack
 
-# consumption
+from consumptionbackend.entities import EntityBase, Id
+
 from .fields import (
     ConsumableWhereMapping,
     PersonnelWhereMapping,
     SeriesWhereMapping,
 )
-from consumptionbackend.entities import EntityBase, Id
-
 
 E = TypeVar("E", bound=EntityBase)
 
@@ -22,7 +20,6 @@ class WhereMapping(TypedDict, total=False):
 
 
 class DatabaseHandlerBase(Generic[E], ABC):
-
     @classmethod
     @abstractmethod
     def new(cls, **values: Any) -> Id:

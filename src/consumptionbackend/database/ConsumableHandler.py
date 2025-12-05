@@ -1,12 +1,7 @@
-# stdlib
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Unpack, override
 
-# consumption
-from .database_handling import DatabaseHandlerBase, WhereMapping
-from .queries import ApplyQuery
-from .fields import ConsumableFieldsRequired
 from consumptionbackend.entities import (
     Consumable,
     EntityRoles,
@@ -14,9 +9,12 @@ from consumptionbackend.entities import (
     Series,
 )
 
+from .database_handling import DatabaseHandlerBase, WhereMapping
+from .fields import ConsumableFieldsRequired
+from .queries import ApplyQuery
+
 
 class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
-
     @override
     @classmethod
     @abstractmethod

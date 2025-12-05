@@ -1,10 +1,8 @@
-# stdlib
 from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import NamedTuple, override
 
-# consumption
 from .types import Id
 
 

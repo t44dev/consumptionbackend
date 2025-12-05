@@ -1,6 +1,5 @@
-# stdlib
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TypedDict, final, override
 
@@ -11,7 +10,6 @@ class ConfigDict(TypedDict):
 
 
 class ConfigProvider(ABC):
-
     @abstractmethod
     def setup(self) -> ConfigDict:
         pass
@@ -27,7 +25,6 @@ class ConfigProvider(ABC):
 
 @final
 class FileConfigProvider(ConfigProvider):
-
     def __init__(self, path: Path, default_config: ConfigDict) -> None:
         super().__init__()
         self.path = path

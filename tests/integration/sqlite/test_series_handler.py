@@ -1,8 +1,6 @@
-# stdlib
-from collections.abc import MutableSequence
 import unittest
+from collections.abc import MutableSequence
 
-# consumption
 from consumptionbackend.database import (
     ApplyQuery,
     SeriesApplyMapping,
@@ -11,14 +9,16 @@ from consumptionbackend.database import (
     WhereQuery,
 )
 from consumptionbackend.database.sqlite import (
+    ConsumableHandler,
     PersonnelHandler,
     SeriesHandler,
-    ConsumableHandler,
 )
 from consumptionbackend.entities import Id, Status
 from consumptionbackend.utils import NotFoundException
-from .base import SQLiteIntegrationTestBase
+
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED, SERIES_REQUIRED
+
+from .base import SQLiteIntegrationTestBase
 
 
 class TestSeriesIntegration(SQLiteIntegrationTestBase):

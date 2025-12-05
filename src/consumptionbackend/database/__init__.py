@@ -1,19 +1,19 @@
 from .ConsumableHandler import ConsumableHandlerBase
-from .PersonnelHandler import PersonnelHandlerBase
-from .SeriesHandler import SeriesHandlerBase
-from .database_handling import WhereMapping, DatabaseHandlerBase
+from .database_handling import DatabaseHandlerBase, WhereMapping
 from .fields import (
-    ConsumableFieldsRequired,
     ConsumableApplyMapping,
+    ConsumableFieldsRequired,
     ConsumableWhereMapping,
-    SeriesFieldsRequired,
-    SeriesApplyMapping,
-    SeriesWhereMapping,
-    PersonnelFieldsRequired,
     PersonnelApplyMapping,
+    PersonnelFieldsRequired,
     PersonnelWhereMapping,
+    SeriesApplyMapping,
+    SeriesFieldsRequired,
+    SeriesWhereMapping,
 )
-from .queries import ApplyQuery, ApplyOperator, WhereQuery, WhereOperator
+from .PersonnelHandler import PersonnelHandlerBase
+from .queries import ApplyOperator, ApplyQuery, WhereOperator, WhereQuery
+from .SeriesHandler import SeriesHandlerBase
 
 __all__ = [
     "ConsumableHandlerBase",
