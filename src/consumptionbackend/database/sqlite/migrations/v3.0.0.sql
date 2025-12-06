@@ -141,8 +141,8 @@ BEGIN
     UPDATE
         consumables
     SET
-        parts = max(NEW.parts, NEW.max_parts, 1),
-        max_parts = max(NEW.parts, NEW.max_parts, 1)
+        parts = max(NEW.parts, coalesce(NEW.max_parts, 1)),
+        max_parts = max(NEW.parts, coalesce(NEW.max_parts, 1))
     WHERE
         id = NEW.id;
 END;
@@ -154,8 +154,8 @@ BEGIN
     UPDATE
         consumables
     SET
-        parts = max(NEW.parts, NEW.max_parts, 1),
-        max_parts = max(NEW.parts, NEW.max_parts, 1)
+        parts = max(NEW.parts, coalesce(NEW.max_parts, 1)),
+        max_parts = max(NEW.parts, coalesce(NEW.max_parts, 1))
     WHERE
         id = NEW.id;
 END;
