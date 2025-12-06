@@ -15,6 +15,6 @@ class EntityBase(ABC):
         return hash(self.id)
 
 
-class EntityRoles(NamedTuple):
+class IdRoles(NamedTuple):
     id: Id
     roles: Sequence[str]

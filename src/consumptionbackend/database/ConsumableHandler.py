@@ -4,8 +4,8 @@ from typing import Unpack, override
 
 from consumptionbackend.entities import (
     Consumable,
-    EntityRoles,
     Id,
+    IdRoles,
     Series,
 )
 
@@ -28,7 +28,7 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
 
     @classmethod
     @abstractmethod
-    def personnel(cls, consumable_id: Id) -> Sequence[EntityRoles]:
+    def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]:
         pass
 
     @classmethod

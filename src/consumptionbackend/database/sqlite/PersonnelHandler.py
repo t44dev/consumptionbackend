@@ -9,7 +9,7 @@ from consumptionbackend.database import (
     WhereMapping,
 )
 from consumptionbackend.database.fields import PersonnelApplyMapping
-from consumptionbackend.entities import EntityRoles, Id, Personnel
+from consumptionbackend.entities import Id, IdRoles, Personnel
 
 from .sql_utils import SQLiteType
 from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
@@ -55,7 +55,7 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
 
     @override
     @classmethod
-    def consumables(cls, personnel_id: Id) -> Sequence[EntityRoles]:
+    def consumables(cls, personnel_id: Id) -> Sequence[IdRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -69,7 +69,7 @@ class SQLitePersonnelHandler(PersonnelHandlerBase):
             c_id = row["id"]
             role = row["role"]
             mapping[c_id].append(role)
-        return [EntityRoles(c_id, mapping[c_id]) for c_id in mapping]
+        return [IdRoles(c_id, mapping[c_id]) for c_id in mapping]
 
     @classmethod
     def _consumables_sql(cls, personnel_id: Id) -> tuple[str, Sequence[SQLiteType]]:

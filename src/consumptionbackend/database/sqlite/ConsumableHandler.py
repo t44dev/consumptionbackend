@@ -12,8 +12,8 @@ from consumptionbackend.database.fields import ConsumableApplyMapping
 from consumptionbackend.database.queries import ApplyOperator, ApplyQuery
 from consumptionbackend.entities import (
     Consumable,
-    EntityRoles,
     Id,
+    IdRoles,
     Personnel,
     Series,
 )
@@ -99,7 +99,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
     @override
     @classmethod
-    def personnel(cls, consumable_id: Id) -> Sequence[EntityRoles]:
+    def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]:
         cur = cls._HANDLER.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -113,7 +113,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
             p_id = row["id"]
             role = row["role"]
             mapping[p_id].append(role)
-        return [EntityRoles(p_id, mapping[p_id]) for p_id in mapping]
+        return [IdRoles(p_id, mapping[p_id]) for p_id in mapping]
 
     @classmethod
     def _personnel_sql(cls, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
