@@ -284,6 +284,9 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
     @classmethod
     def _change_tags(cls, ids: Sequence[Id], tags: Sequence[ApplyQuery[str]]) -> None:
+        if len(ids) == 0:
+            return
+
         add_tags: MutableSet[str] = set()
         remove_tags: MutableSet[str] = set()
 
