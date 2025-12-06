@@ -1,8 +1,5 @@
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Generic, TypeVar
-
-T = TypeVar("T")
 
 
 class ApplyOperator(IntEnum):
@@ -12,7 +9,7 @@ class ApplyOperator(IntEnum):
 
 
 @dataclass
-class ApplyQuery(Generic[T]):
+class ApplyQuery[T]:
     value: T
     operator: ApplyOperator = ApplyOperator.APPLY
 
@@ -28,6 +25,6 @@ class WhereOperator(IntEnum):
 
 
 @dataclass
-class WhereQuery(Generic[T]):
+class WhereQuery[T]:
     value: T
     operator: WhereOperator = WhereOperator.EQ

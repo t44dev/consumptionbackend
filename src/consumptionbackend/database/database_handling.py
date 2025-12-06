@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Generic, TypedDict, TypeVar, Unpack
+from typing import Any, TypedDict, Unpack
 
 from consumptionbackend.entities import EntityBase, Id
 
@@ -10,8 +10,6 @@ from .fields import (
     SeriesWhereMapping,
 )
 
-E = TypeVar("E", bound=EntityBase)
-
 
 class WhereMapping(TypedDict, total=False):
     consumables: ConsumableWhereMapping
@@ -19,7 +17,7 @@ class WhereMapping(TypedDict, total=False):
     personnel: PersonnelWhereMapping
 
 
-class DatabaseHandlerBase(Generic[E], ABC):
+class DatabaseHandlerBase[E: EntityBase](ABC):
     @classmethod
     @abstractmethod
     def new(cls, **values: Any) -> Id:

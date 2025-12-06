@@ -1,13 +1,11 @@
 import unittest
 from collections.abc import Sequence
-from typing import Callable, TypeVar, override
+from typing import Callable, override
 
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
 from tests.providers.config import MemoryConfigProvider
 from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
-
-T = TypeVar("T")
 
 
 class SQLiteIntegrationTestBase(unittest.TestCase):
@@ -26,7 +24,7 @@ class SQLiteIntegrationTestBase(unittest.TestCase):
         SQLiteMemoryDatabaseProvider.reset()
         return super().tearDownClass()
 
-    def assertSingle(
+    def assertSingle[T](
         self, seq: Sequence[T], predicate: Callable[[T], bool] = lambda _: True
     ) -> None:
         matches = [x for x in seq if predicate(x)]

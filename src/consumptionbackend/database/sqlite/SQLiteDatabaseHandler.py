@@ -1,6 +1,6 @@
 import sqlite3
 from collections.abc import Mapping, MutableSequence, Sequence
-from typing import Any, TypeVar, Unpack, final
+from typing import Any, Unpack, final
 
 from consumptionbackend.database import (
     ApplyQuery,
@@ -21,8 +21,6 @@ from .sql_utils import (
     to_sqlite_operator,
     validate_column_name,
 )
-
-E = TypeVar("E", bound=EntityBase)
 
 
 @final
@@ -51,7 +49,7 @@ class SQLiteDatabaseHandler:
     """
 
     @classmethod
-    def new(cls, t: type[E], **values: Any) -> Id:
+    def new[E: EntityBase](cls, t: type[E], **values: Any) -> Id:
         if len(values) == 0:
             raise NoValuesException(f"No values provided on creation of {t.__name__}.")
 
@@ -68,7 +66,9 @@ class SQLiteDatabaseHandler:
         return id
 
     @classmethod
-    def _new_sql(cls, t: type[E], **values: Any) -> tuple[str, Sequence[SQLiteType]]:
+    def _new_sql[E: EntityBase](
+        cls, t: type[E], **values: Any
+    ) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         new_values: Sequence[SQLiteType] = []
@@ -85,7 +85,7 @@ class SQLiteDatabaseHandler:
         return sql, new_values
 
     @classmethod
-    def find_by_id(cls, t: type[E], id: Id) -> E:
+    def find_by_id[E: EntityBase](cls, t: type[E], id: Id) -> E:
         cur = cls.PROVIDER().db.cursor()
 
         result: sqlite3.Row | None = cur.execute(
@@ -100,13 +100,15 @@ class SQLiteDatabaseHandler:
         return t(**result)
 
     @classmethod
-    def _find_by_id_sql(cls, t: type[E], id: Id) -> tuple[str, Sequence[SQLiteType]]:
+    def _find_by_id_sql[E: EntityBase](
+        cls, t: type[E], id: Id
+    ) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id = ?", [id]
 
     @classmethod
-    def find_by_ids(cls, t: type[E], id: Sequence[Id]) -> Sequence[E]:
+    def find_by_ids[E: EntityBase](cls, t: type[E], id: Sequence[Id]) -> Sequence[E]:
         cur = cls.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -118,7 +120,7 @@ class SQLiteDatabaseHandler:
         return [t(**result) for result in results]
 
     @classmethod
-    def _find_by_ids_sql(
+    def _find_by_ids_sql[E: EntityBase](
         cls, t: type[E], ids: Sequence[Id]
     ) -> tuple[str, Sequence[SQLiteType]]:
         table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
@@ -126,7 +128,9 @@ class SQLiteDatabaseHandler:
         return f"SELECT * FROM {table} WHERE id IN ({placeholders(len(ids))})", [*ids]
 
     @classmethod
-    def find(cls, t: type[E], **where: Unpack[WhereMapping]) -> Sequence[E]:
+    def find[E: EntityBase](
+        cls, t: type[E], **where: Unpack[WhereMapping]
+    ) -> Sequence[E]:
         cur = cls.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -139,7 +143,7 @@ class SQLiteDatabaseHandler:
         return [t(**result) for result in results if result["id"] is not None]
 
     @classmethod
-    def _find_sql(
+    def _find_sql[E: EntityBase](
         cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, Sequence[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
@@ -153,7 +157,7 @@ class SQLiteDatabaseHandler:
         return sql, values
 
     @classmethod
-    def update(
+    def update[E: EntityBase](
         cls,
         t: type[E],
         where: WhereMapping,
@@ -174,7 +178,7 @@ class SQLiteDatabaseHandler:
         return [row["id"] for row in results]
 
     @classmethod
-    def _update_sql(
+    def _update_sql[E: EntityBase](
         cls,
         t: type[E],
         where: WhereMapping,
@@ -197,7 +201,7 @@ class SQLiteDatabaseHandler:
         return sql, [*apply_values, *where_values]
 
     @classmethod
-    def delete(cls, t: type[E], **where: Unpack[WhereMapping]) -> int:
+    def delete[E: EntityBase](cls, t: type[E], **where: Unpack[WhereMapping]) -> int:
         cur = cls.PROVIDER().db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
@@ -210,7 +214,7 @@ class SQLiteDatabaseHandler:
         return len(results)
 
     @classmethod
-    def _delete_sql(
+    def _delete_sql[E: EntityBase](
         cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, Sequence[SQLiteType]]:
         where_query, values = SQLiteDatabaseHandler.where_query(where)
