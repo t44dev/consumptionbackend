@@ -9,8 +9,8 @@ from consumptionbackend.entities import (
     Series,
 )
 
-from .database_handling import DatabaseHandlerBase, WhereMapping
-from .fields import ConsumableFieldsRequired
+from .database_handling import DatabaseHandlerBase
+from .fields import ConsumableFieldsRequired, WhereMapping
 from .queries import ApplyQuery
 
 

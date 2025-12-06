@@ -1,12 +1,18 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 from consumptionbackend.entities import Id, Status
 
 from .queries import ApplyQuery, WhereQuery
 
 # Base
+
+
+class WhereMapping(TypedDict, total=False):
+    consumables: ConsumableWhereMapping
+    series: SeriesWhereMapping
+    personnel: PersonnelWhereMapping
 
 
 class BaseFieldsRequired(TypedDict): ...
@@ -96,3 +102,33 @@ class PersonnelWhereMapping(BaseWhereMapping, total=False):
     last_name: Sequence[WhereQuery[str]]
     pseudonym: Sequence[WhereQuery[str]]
     role: Sequence[WhereQuery[str]]
+
+
+# Conversions
+
+
+def consumable_required_to_where(required: ConsumableFieldsRequired) -> WhereMapping:
+    return {
+        "consumables": cast(
+            ConsumableWhereMapping,
+            cast(object, {k: [WhereQuery(v)] for k, v in required.items()}),
+        )
+    }
+
+
+def series_required_to_where(required: SeriesFieldsRequired) -> WhereMapping:
+    return {
+        "series": cast(
+            SeriesWhereMapping,
+            cast(object, {k: [WhereQuery(v)] for k, v in required.items()}),
+        )
+    }
+
+
+def personnel_required_to_where(required: PersonnelFieldsRequired) -> WhereMapping:
+    return {
+        "personnel": cast(
+            PersonnelWhereMapping,
+            cast(object, {k: [WhereQuery(v)] for k, v in required.items()}),
+        )
+    }

@@ -1,20 +1,9 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, TypedDict, Unpack
+from typing import Any, Unpack
 
+from consumptionbackend.database.fields import WhereMapping
 from consumptionbackend.entities import EntityBase, Id
-
-from .fields import (
-    ConsumableWhereMapping,
-    PersonnelWhereMapping,
-    SeriesWhereMapping,
-)
-
-
-class WhereMapping(TypedDict, total=False):
-    consumables: ConsumableWhereMapping
-    series: SeriesWhereMapping
-    personnel: PersonnelWhereMapping
 
 
 class DatabaseHandlerBase[E: EntityBase](ABC):
