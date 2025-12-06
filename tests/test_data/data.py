@@ -11,7 +11,7 @@ from consumptionbackend.database import (
 from consumptionbackend.entities import Status
 
 CONSUMABLE_REQUIRED: ConsumableFieldsRequired = {
-    "series_id": 4,
+    "series_id": -1,
     "name": "Test Consumable",
     "type": "TYPE",
     "status": Status.ON_HOLD,

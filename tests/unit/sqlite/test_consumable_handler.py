@@ -1,7 +1,6 @@
 import unittest
 
 from consumptionbackend.database.sqlite.ConsumableHandler import SQLiteConsumableHandler
-
 from tests.test_data import COMPLEX_WHERE, COMPLEX_WHERE_VALUES
 
 from .base import SQLiteUnitTestBase

@@ -19,6 +19,14 @@ class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
     def setup(cls) -> sqlite3.Connection:
         pass
 
+    @classmethod
+    def connect(cls, db_path: Path | str) -> sqlite3.Connection:
+        conn = sqlite3.connect(db_path)
+
+        _ = conn.execute("PRAGMA foreign_keys = ON").fetchall()
+
+        return conn
+
 
 class SQLiteFileDatabaseProvider(SQLiteDatabaseProviderBase):
     @override
@@ -29,11 +37,11 @@ class SQLiteFileDatabaseProvider(SQLiteDatabaseProviderBase):
 
         if not db_path.is_file():
             db_path.parent.mkdir(exist_ok=True, parents=True)
-            conn = sqlite3.connect(db_path)
+            conn = cls.connect(db_path)
             SQLiteFileDatabaseProvider.migrate(conn, None, config.CURRENT_VERSION)
             return conn
 
-        conn = sqlite3.connect(db_path)
+        conn = cls.connect(db_path)
         version = config["version"]
         if version != config.CURRENT_VERSION:
             SQLiteFileDatabaseProvider.migrate(conn, version, config.CURRENT_VERSION)

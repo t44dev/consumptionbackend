@@ -10,7 +10,6 @@ from consumptionbackend.entities import (
     Personnel,
     Series,
 )
-
 from tests.test_data import (
     COMPLEX_WHERE,
     COMPLEX_WHERE_VALUES,

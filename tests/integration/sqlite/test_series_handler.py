@@ -15,7 +15,6 @@ from consumptionbackend.database.sqlite import (
 )
 from consumptionbackend.entities import Id, Status
 from consumptionbackend.utils import NotFoundException
-
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED, SERIES_REQUIRED
 
 from .base import SQLiteIntegrationTestBase
@@ -174,15 +173,21 @@ class TestSeriesIntegration(SQLiteIntegrationTestBase):
         self.assertEqual(len(updated_series), 0)
 
     def test_delete(self):
-        _ = SeriesHandler.new(**{"name": "DeleteSeries1"})
+        series_id = SeriesHandler.new(**{"name": "DeleteSeries1"})
         _ = SeriesHandler.new(**{"name": "DeleteSeries2"})
         _ = SeriesHandler.new(**{"name": "KeptSeries3"})
+
+        consumable_id = ConsumableHandler.new(
+            **{**CONSUMABLE_REQUIRED, "series_id": series_id}
+        )
 
         deleted_series_count = SeriesHandler.delete(
             **{"series": {"name": [WhereQuery("deleteseries", WhereOperator.LIKE)]}}
         )
 
         self.assertEqual(deleted_series_count, 2)
+        consumable = ConsumableHandler.find_by_id(consumable_id)
+        self.assertEqual(consumable.series_id, -1)
 
     def test_delete_not_found(self):
         _ = SeriesHandler.new(**SERIES_REQUIRED)

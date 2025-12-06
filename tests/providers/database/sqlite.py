@@ -12,7 +12,7 @@ class SQLiteMemoryDatabaseProvider(SQLiteFileDatabaseProvider):
     @classmethod
     def setup(cls) -> sqlite3.Connection:
         config = ConsumptionConfig()
-        conn = sqlite3.connect(":memory:")
+        conn = cls.connect(":memory:")
         cls.migrate(conn, None, config.CURRENT_VERSION)
         return conn
 

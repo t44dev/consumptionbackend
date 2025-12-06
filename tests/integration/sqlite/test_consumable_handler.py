@@ -17,7 +17,6 @@ from consumptionbackend.database.sqlite import (
 )
 from consumptionbackend.entities import Id, Status
 from consumptionbackend.utils import NotFoundException
-
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED, SERIES_REQUIRED
 
 from .base import SQLiteIntegrationTestBase

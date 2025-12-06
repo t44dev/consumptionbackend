@@ -4,7 +4,6 @@ from typing import Callable, TypeVar, override
 
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
-
 from tests.providers.config import MemoryConfigProvider
 from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
 

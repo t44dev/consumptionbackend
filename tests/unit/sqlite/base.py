@@ -5,7 +5,6 @@ from typing import Any, override
 from consumptionbackend.config import ConsumptionConfig
 from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
 from consumptionbackend.database.sqlite.sql_utils import fix_value
-
 from tests.providers.config import MemoryConfigProvider
 from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
 
