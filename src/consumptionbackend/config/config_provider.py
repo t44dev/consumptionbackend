@@ -11,16 +11,13 @@ class ConfigDict(TypedDict):
 
 class ConfigProvider(ABC):
     @abstractmethod
-    def setup(self) -> ConfigDict:
-        pass
+    def setup(self) -> ConfigDict: ...
 
     @abstractmethod
-    def read(self) -> ConfigDict:
-        pass
+    def read(self) -> ConfigDict: ...
 
     @abstractmethod
-    def write(self, config: ConfigDict) -> None:
-        pass
+    def write(self, config: ConfigDict) -> None: ...
 
 
 @final

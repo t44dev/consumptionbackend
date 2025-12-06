@@ -18,23 +18,19 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
     @override
     @classmethod
     @abstractmethod
-    def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Id:
-        pass
+    def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Id: ...
 
     @classmethod
     @abstractmethod
-    def series(cls, id: Id) -> Series:
-        pass
+    def series(cls, id: Id) -> Series: ...
 
     @classmethod
     @abstractmethod
-    def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]:
-        pass
+    def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]: ...
 
     @classmethod
     @abstractmethod
-    def tags(cls, consumable_id: Id) -> Sequence[str]:
-        pass
+    def tags(cls, consumable_id: Id) -> Sequence[str]: ...
 
     @classmethod
     @abstractmethod
@@ -43,5 +39,4 @@ class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Sequence[ApplyQuery[str]],
-    ) -> Sequence[Id]:
-        pass
+    ) -> Sequence[Id]: ...

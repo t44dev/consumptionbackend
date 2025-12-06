@@ -20,23 +20,19 @@ class WhereMapping(TypedDict, total=False):
 class DatabaseHandlerBase[E: EntityBase](ABC):
     @classmethod
     @abstractmethod
-    def new(cls, **values: Any) -> Id:
-        pass
+    def new(cls, **values: Any) -> Id: ...
 
     @classmethod
     @abstractmethod
-    def find_by_id(cls, id: Id) -> E:
-        pass
+    def find_by_id(cls, id: Id) -> E: ...
 
     @classmethod
     @abstractmethod
-    def find_by_ids(cls, ids: Sequence[Id]) -> Sequence[E]:
-        pass
+    def find_by_ids(cls, ids: Sequence[Id]) -> Sequence[E]: ...
 
     @classmethod
     @abstractmethod
-    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[E]:
-        pass
+    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[E]: ...
 
     @classmethod
     @abstractmethod
@@ -44,10 +40,8 @@ class DatabaseHandlerBase[E: EntityBase](ABC):
         cls,
         where: WhereMapping,
         apply: Any,
-    ) -> Sequence[Id]:
-        pass
+    ) -> Sequence[Id]: ...
 
     @classmethod
     @abstractmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> int:
-        pass
+    def delete(cls, **where: Unpack[WhereMapping]) -> int: ...

@@ -9,8 +9,7 @@ from .queries import ApplyQuery, WhereQuery
 # Base
 
 
-class BaseFieldsRequired(TypedDict):
-    pass
+class BaseFieldsRequired(TypedDict): ...
 
 
 class BaseWhereMapping(TypedDict, total=False):

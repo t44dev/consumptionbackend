@@ -16,8 +16,7 @@ class SQLiteDatabaseProviderBase(AbstractSingleton, ABC):
 
     @classmethod
     @abstractmethod
-    def setup(cls) -> sqlite3.Connection:
-        pass
+    def setup(cls) -> sqlite3.Connection: ...
 
     @classmethod
     def connect(cls, db_path: Path | str) -> sqlite3.Connection:

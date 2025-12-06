@@ -12,10 +12,8 @@ class SeriesHandlerBase(DatabaseHandlerBase[Series], ABC):
     @override
     @classmethod
     @abstractmethod
-    def new(cls, **values: Unpack[SeriesFieldsRequired]) -> Id:
-        pass
+    def new(cls, **values: Unpack[SeriesFieldsRequired]) -> Id: ...
 
     @classmethod
     @abstractmethod
-    def consumables(cls, id: Id) -> Sequence[Consumable]:
-        pass
+    def consumables(cls, id: Id) -> Sequence[Consumable]: ...

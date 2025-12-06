@@ -24,8 +24,7 @@ class SingletonBase:
             del SingletonMeta.s_instances[cls]
 
 
-class Singleton(SingletonBase, metaclass=SingletonMeta):
-    pass
+class Singleton(SingletonBase, metaclass=SingletonMeta): ...
 
 
 class AbstractSingletonMeta(SingletonMeta, ABCMeta):
@@ -40,5 +39,4 @@ class AbstractSingletonMeta(SingletonMeta, ABCMeta):
         return cls.s_instances[cls]
 
 
-class AbstractSingleton(SingletonBase, metaclass=AbstractSingletonMeta):
-    pass
+class AbstractSingleton(SingletonBase, metaclass=AbstractSingletonMeta): ...

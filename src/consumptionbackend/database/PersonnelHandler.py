@@ -12,10 +12,8 @@ class PersonnelHandlerBase(DatabaseHandlerBase[Personnel], ABC):
     @override
     @classmethod
     @abstractmethod
-    def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Id:
-        pass
+    def new(cls, **values: Unpack[PersonnelFieldsRequired]) -> Id: ...
 
     @classmethod
     @abstractmethod
-    def consumables(cls, personnel_id: Id) -> Sequence[IdRoles]:
-        pass
+    def consumables(cls, personnel_id: Id) -> Sequence[IdRoles]: ...
