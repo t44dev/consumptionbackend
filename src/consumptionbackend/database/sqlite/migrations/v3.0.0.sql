@@ -2,7 +2,7 @@ BEGIN TRANSACTION;
 -- Setup Main Tables
 -- Series
 CREATE TABLE series (
-    id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT
 );
 
@@ -11,9 +11,14 @@ INSERT INTO
 VALUES
     (- 1, 'None');
 
+INSERT INTO
+    sqlite_sequence (name, seq)
+VALUES
+    ('series', 0);
+
 -- Personnel
 CREATE TABLE personnel (
-    id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT,
     last_name TEXT,
     pseudonym TEXT
@@ -21,7 +26,7 @@ CREATE TABLE personnel (
 
 -- Consumables
 CREATE TABLE consumables (
-    id INTEGER PRIMARY KEY NOT NULL UNIQUE DEFAULT 0,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     series_id INTEGER NOT NULL DEFAULT - 1,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
