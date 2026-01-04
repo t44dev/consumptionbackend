@@ -16,7 +16,7 @@ from consumptionbackend.database.sqlite import (
     SeriesHandler,
 )
 from consumptionbackend.entities import Id, Status
-from consumptionbackend.utils import NotFoundException
+from consumptionbackend.utils import NotFoundError
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED, SERIES_REQUIRED
 
 from .base import SQLiteIntegrationTestBase
@@ -58,7 +58,7 @@ class TestConsumableIntegration(SQLiteIntegrationTestBase):
     def test_find_by_id_not_found(self):
         id = 44_444
 
-        with self.assertRaises(NotFoundException):
+        with self.assertRaises(NotFoundError):
             _ = ConsumableHandler.find_by_id(id)
 
     def test_find_by_ids(self):

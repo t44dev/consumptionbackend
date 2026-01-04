@@ -1,16 +1,16 @@
 from typing import Any
 
 
-class ConsumptionBackendException(Exception):
+class ConsumptionBackendError(Exception):
     def __init__(self, message: str, *args: Any) -> None:
         self.message: str = message
         super().__init__(message, args)
 
 
-class NotFoundException(ConsumptionBackendException): ...
+class NotFoundError(ConsumptionBackendError): ...
 
 
-class ValidationException(ConsumptionBackendException): ...
+class ValidationError(ConsumptionBackendError): ...
 
 
-class NoValuesException(ConsumptionBackendException): ...
+class NoValuesError(ConsumptionBackendError): ...

@@ -9,8 +9,8 @@ from consumptionbackend.database import (
     WhereQuery,
 )
 from consumptionbackend.entities import Consumable, EntityBase, Id, Personnel, Series
-from consumptionbackend.utils import NotFoundException
-from consumptionbackend.utils.exceptions import NoValuesException
+from consumptionbackend.utils import NotFoundError
+from consumptionbackend.utils.exceptions import NoValuesError
 
 from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 from .sql_utils import (
@@ -51,7 +51,7 @@ class SQLiteDatabaseHandler:
     @classmethod
     def new[E: EntityBase](cls, t: type[E], **values: Any) -> Id:
         if len(values) == 0:
-            raise NoValuesException(f"No values provided on creation of {t.__name__}.")
+            raise NoValuesError(f"No values provided on creation of {t.__name__}.")
 
         cur = cls.PROVIDER().db.cursor()
 
@@ -93,7 +93,7 @@ class SQLiteDatabaseHandler:
         ).fetchone()
 
         if result is None:
-            raise NotFoundException(f"{t} with {id=} not found.")
+            raise NotFoundError(f"{t} with {id=} not found.")
 
         cur.close()
 

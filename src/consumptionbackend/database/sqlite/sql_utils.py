@@ -10,7 +10,7 @@ from consumptionbackend.database.queries import (
     WhereQuery,
 )
 from consumptionbackend.entities import Id
-from consumptionbackend.utils import ValidationException
+from consumptionbackend.utils import ValidationError
 
 SQLiteType: TypeAlias = None | Id | int | float | str
 
@@ -44,7 +44,7 @@ def to_sqlite_operator(
                 return f"{column} <= ?", value
             case WhereOperator.LIKE:
                 if not isinstance(value, str):
-                    raise ValidationException(
+                    raise ValidationError(
                         "LIKE operator value must be of type str.", value
                     )
                 lower_value = f"%{str.lower(value)}%"
@@ -63,7 +63,7 @@ def fix_value(value: Any) -> SQLiteType:
 
 def validate_column_name(column: str) -> None:
     if any(map(lambda x: (ord(x) < 97 or ord(x) > 122) and ord(x) != 95, column)):
-        raise ValidationException(
+        raise ValidationError(
             "Invalid column name on insert. Column names must only include a-z and _."
         )
 
