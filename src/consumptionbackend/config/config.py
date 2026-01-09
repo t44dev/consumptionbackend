@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, final
 
@@ -7,12 +8,23 @@ from consumptionbackend.utils import Singleton
 
 from .config_provider import ConfigDict, ConfigProvider, FileConfigProvider
 
+CONFIG_DIR_OVERRIDE = os.getenv("CONSUMPTION_CONFIG_DIR")
+DATA_DIR_OVERRIDE = os.getenv("CONSUMPTION_DATA_DIR")
+
 
 @final
 class ConsumptionConfig(Singleton):
     CURRENT_VERSION: str = "3.0.0"
-    CONFIG_DIR: Path = user_config_path("consumption")
-    DATA_DIR: Path = user_data_path("consumption")
+    CONFIG_DIR: Path = (
+        Path(CONFIG_DIR_OVERRIDE)
+        if CONFIG_DIR_OVERRIDE is not None
+        else user_config_path("consumption")
+    )
+    DATA_DIR: Path = (
+        Path(DATA_DIR_OVERRIDE)
+        if DATA_DIR_OVERRIDE is not None
+        else user_data_path("consumption")
+    )
 
     CONFIG_FILE_PATH = CONFIG_DIR / "config.json"
 
