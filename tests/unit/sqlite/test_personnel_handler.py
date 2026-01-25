@@ -1,16 +1,16 @@
 import unittest
 
-from consumptionbackend.database.sqlite.PersonnelHandler import SQLitePersonnelHandler
+from consumptionbackend.database.sqlite import SQLitePersonnelService
 
 from .base import SQLiteUnitTestBase
 
 
-class TestSQLitePersonnelHandler(SQLiteUnitTestBase):
+class TestSQLitePersonnelService(SQLiteUnitTestBase):
     def test_consumables_simple(self):
         personnel_id = 44
         expected_sql = "SELECT consumable_id as id, role FROM consumable_personnel WHERE personnel_id = ?"
 
-        (sql, values) = SQLitePersonnelHandler._consumables_sql(  # pyright: ignore[reportPrivateUsage]
+        (sql, values) = SQLitePersonnelService()._consumables_sql(  # pyright: ignore[reportPrivateUsage]
             personnel_id
         )
 

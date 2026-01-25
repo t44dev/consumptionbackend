@@ -1,11 +1,11 @@
-from .ConsumableHandler import SQLiteConsumableHandler as ConsumableHandler
-from .PersonnelHandler import SQLitePersonnelHandler as PersonnelHandler
-from .SeriesHandler import SQLiteSeriesHandler as SeriesHandler
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
+from .consumable import SQLiteConsumableService
+from .personnel import SQLitePersonnelService
+from .register import register_sqlite_services
+from .series import SQLiteSeriesService
 
 __all__ = [
-    "SQLiteDatabaseHandler",
-    "ConsumableHandler",
-    "SeriesHandler",
-    "PersonnelHandler",
+    "SQLiteConsumableService",
+    "SQLitePersonnelService",
+    "SQLiteSeriesService",
+    "register_sqlite_services",
 ]

@@ -3,17 +3,16 @@ from collections.abc import Sequence
 from typing import Unpack, override
 
 from consumptionbackend.entities import Consumable, Id, Series
+from consumptionbackend.utils import ServiceBase
 
-from .database_handling import DatabaseHandlerBase
+from .base import EntityServiceBase
 from .fields import SeriesFieldsRequired
 
 
-class SeriesHandlerBase(DatabaseHandlerBase[Series], ABC):
+class SeriesService(EntityServiceBase[Series], ServiceBase, ABC):
     @override
-    @classmethod
     @abstractmethod
     def new(cls, **values: Unpack[SeriesFieldsRequired]) -> Id: ...
 
-    @classmethod
     @abstractmethod
     def consumables(cls, id: Id) -> Sequence[Consumable]: ...

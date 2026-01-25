@@ -1,8 +1,8 @@
-from .Consumable import Consumable
-from .EntityBase import EntityBase, IdRoles
-from .Personnel import Personnel
-from .Series import Series
-from .Status import Status
+from .base import EntityBase, IdRoles
+from .consumable import Consumable
+from .personnel import Personnel
+from .series import Series
+from .status import Status
 from .types import Id
 
 __all__ = [

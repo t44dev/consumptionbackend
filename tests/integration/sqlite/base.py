@@ -2,26 +2,44 @@ import unittest
 from collections.abc import Sequence
 from typing import Callable, override
 
-from consumptionbackend.config import ConsumptionConfig
-from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
-from tests.providers.config import MemoryConfigProvider
-from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
+from consumptionbackend.database import (
+    ConsumableService,
+    PersonnelService,
+    SeriesService,
+)
+from consumptionbackend.database.sqlite import (
+    SQLiteConsumableService,
+    SQLitePersonnelService,
+    SQLiteSeriesService,
+)
+from consumptionbackend.database.sqlite.engine import SQLiteDatabaseEngine
+from consumptionbackend.utils import ServiceProvider
+from tests.services.database.sqlite import SQLiteMemoryDatabaseEngine
 
 
 class SQLiteIntegrationTestBase(unittest.TestCase):
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+        self.sqlite_engine: SQLiteDatabaseEngine | None = None
+
     @override
     @classmethod
     def setUpClass(cls):
-        ConsumptionConfig._PROVIDER = (  # pyright:ignore[reportPrivateUsage]
-            MemoryConfigProvider()
-        )
-        SQLiteDatabaseHandler.PROVIDER = SQLiteMemoryDatabaseProvider
+        ServiceProvider.register(ConsumableService, SQLiteConsumableService())
+        ServiceProvider.register(SeriesService, SQLiteSeriesService())
+        ServiceProvider.register(PersonnelService, SQLitePersonnelService())
         return super().setUpClass()
 
     @override
+    def setUp(self) -> None:
+        self.sqlite_engine = SQLiteMemoryDatabaseEngine()
+        ServiceProvider.register(SQLiteDatabaseEngine, self.sqlite_engine)
+        return super().setUp()
+
+    @override
     def tearDown(self):
-        ConsumptionConfig.reset()
-        SQLiteMemoryDatabaseProvider.reset()
+        if self.sqlite_engine is not None:
+            self.sqlite_engine.db.close()
         return super().tearDownClass()
 
     def assertSingle[T](

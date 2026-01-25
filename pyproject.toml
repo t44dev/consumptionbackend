@@ -16,9 +16,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
-dependencies = [
-    "platformdirs~=4.5.0",
-]
 
 [project.urls]
 "Homepage" = "https://github.com/track-44/consumptionbackend"

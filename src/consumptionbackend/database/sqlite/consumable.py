@@ -5,11 +5,12 @@ from typing import Unpack, final, override
 
 from consumptionbackend.database import (
     ConsumableFieldsRequired,
-    ConsumableHandlerBase,
+    ConsumableService,
     WhereMapping,
 )
 from consumptionbackend.database.fields import ConsumableApplyMapping
 from consumptionbackend.database.queries import ApplyOperator, ApplyQuery
+from consumptionbackend.database.sqlite.engine import SQLiteDatabaseEngine
 from consumptionbackend.entities import (
     Consumable,
     Id,
@@ -17,22 +18,20 @@ from consumptionbackend.entities import (
     Personnel,
     Series,
 )
+from consumptionbackend.utils import ServiceProvider
 
+from .helper import SQLiteDatabaseHelper
 from .sql_utils import SQLiteType, placeholders, to_shorthand
-from .SQLiteDatabaseHandler import SQLiteDatabaseHandler
 
 
 @final
-class SQLiteConsumableHandler(ConsumableHandlerBase):
-    _HANDLER = SQLiteDatabaseHandler
-
+class SQLiteConsumableService(ConsumableService):
     @override
-    @classmethod
-    def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Id:
+    def new(self, **values: Unpack[ConsumableFieldsRequired]) -> Id:
         tags = values.pop("tags", [])
 
-        new = cls._HANDLER.new(Consumable, **values)
-        cls._change_tags(
+        new = SQLiteDatabaseHelper.new(Consumable, **values)
+        self._change_tags(
             [new],
             [ApplyQuery(tag) for tag in tags],
         )
@@ -40,57 +39,51 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         return new
 
     @override
-    @classmethod
-    def find_by_id(cls, id: Id) -> Consumable:
-        return cls._HANDLER.find_by_id(Consumable, id)
+    def find_by_id(self, id: Id) -> Consumable:
+        return SQLiteDatabaseHelper.find_by_id(Consumable, id)
 
     @override
-    @classmethod
-    def find_by_ids(cls, ids: Sequence[Id]) -> Sequence[Consumable]:
-        return cls._HANDLER.find_by_ids(Consumable, ids)
+    def find_by_ids(self, ids: Sequence[Id]) -> Sequence[Consumable]:
+        return SQLiteDatabaseHelper.find_by_ids(Consumable, ids)
 
     @override
-    @classmethod
-    def find(cls, **where: Unpack[WhereMapping]) -> Sequence[Consumable]:
-        return cls._HANDLER.find(Consumable, **where)
+    def find(self, **where: Unpack[WhereMapping]) -> Sequence[Consumable]:
+        return SQLiteDatabaseHelper.find(Consumable, **where)
 
     @override
-    @classmethod
     def update(
-        cls,
+        self,
         where: WhereMapping,
         apply: ConsumableApplyMapping,
     ) -> Sequence[Id]:
         tags = apply.pop("tags", [])
 
-        updated = cls._HANDLER.update(Consumable, where, apply)
-        cls._change_tags(updated, tags)
+        updated = SQLiteDatabaseHelper.update(Consumable, where, apply)
+        self._change_tags(updated, tags)
 
         return updated
 
     @override
-    @classmethod
-    def delete(cls, **where: Unpack[WhereMapping]) -> int:
-        return cls._HANDLER.delete(Consumable, **where)
+    def delete(self, **where: Unpack[WhereMapping]) -> int:
+        return SQLiteDatabaseHelper.delete(Consumable, **where)
 
     @override
-    @classmethod
-    def series(cls, id: Id) -> Series:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+    def series(self, id: Id) -> Series:
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
-        result: sqlite3.Row = cur.execute(*(cls._series_sql(id))).fetchone()
+        result: sqlite3.Row = cur.execute(*(self._series_sql(id))).fetchone()
 
         cur.close()
         return Series(**result)
 
-    @classmethod
-    def _series_sql(cls, id: Id) -> tuple[str, Sequence[SQLiteType]]:
+    def _series_sql(self, id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT * 
-            FROM {cls._HANDLER.TABLE_MAPPING[Series]} t1
+            FROM {SQLiteDatabaseHelper.TABLE_MAPPING[Series]} t1
             WHERE t1.id = (
                 SELECT t2.series_id 
-                    FROM {cls._HANDLER.TABLE_MAPPING[Consumable]} t2
+                    FROM {SQLiteDatabaseHelper.TABLE_MAPPING[Consumable]} t2
                     WHERE t2.id = ? 
             )
         """
@@ -98,12 +91,12 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
         return sql, [id]
 
     @override
-    @classmethod
-    def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+    def personnel(self, consumable_id: Id) -> Sequence[IdRoles]:
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._personnel_sql(consumable_id))
+            *(self._personnel_sql(consumable_id))
         ).fetchall()
 
         cur.close()
@@ -115,43 +108,40 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
             mapping[p_id].append(role)
         return [IdRoles(p_id, mapping[p_id]) for p_id in mapping]
 
-    @classmethod
-    def _personnel_sql(cls, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
+    def _personnel_sql(self, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT personnel_id as id, role
-            FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}
+            FROM {SQLiteDatabaseHelper.PERSONNEL_MAPPING_TABLE}
             WHERE consumable_id = ?
         """
 
         return sql, [consumable_id]
 
     @override
-    @classmethod
-    def tags(cls, consumable_id: Id) -> Sequence[str]:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+    def tags(self, consumable_id: Id) -> Sequence[str]:
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(cls._tags_sql(consumable_id))
+            *(self._tags_sql(consumable_id))
         ).fetchall()
 
         cur.close()
 
         return [row["tag"] for row in results]
 
-    @classmethod
-    def _tags_sql(cls, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
+    def _tags_sql(self, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
         SELECT tag
-            FROM {cls._HANDLER.TAGS_MAPPING_TABLE}
+            FROM {SQLiteDatabaseHelper.TAGS_MAPPING_TABLE}
             WHERE consumable_id = ?
         """
 
         return sql, [consumable_id]
 
     @override
-    @classmethod
     def change_personnel(
-        cls,
+        self,
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Sequence[ApplyQuery[str]],
@@ -172,57 +162,56 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
                         add_roles.remove(role_query.value)
 
         if len(add_roles) > 0:
-            cls._add_personnel(consumable_where, personnel_where, add_roles)
+            self._add_personnel(consumable_where, personnel_where, add_roles)
         if len(remove_roles) > 0:
-            cls._remove_personnel(consumable_where, personnel_where, remove_roles)
+            self._remove_personnel(consumable_where, personnel_where, remove_roles)
 
         # TODO: Avoid using find
-        consumables = cls.find(**consumable_where)
+        consumables = self.find(**consumable_where)
         return [c.id for c in consumables]
 
-    @classmethod
     def _add_personnel(
-        cls,
+        self,
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Set[str],
     ) -> None:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         for role in roles:
             _ = cur.execute(
-                *(cls._add_personnel_sql(consumable_where, personnel_where, role))
+                *(self._add_personnel_sql(consumable_where, personnel_where, role))
             )
 
-        cls._HANDLER.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
-    @classmethod
     def _add_personnel_sql(
-        cls,
+        self,
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         role: str,
     ) -> tuple[str, Sequence[SQLiteType]]:
-        consumable_where_query, consumable_values = cls._HANDLER.where_query(
+        consumable_where_query, consumable_values = SQLiteDatabaseHelper.where_query(
             consumable_where
         )
-        personnel_where_query, personnel_values = cls._HANDLER.where_query(
+        personnel_where_query, personnel_values = SQLiteDatabaseHelper.where_query(
             personnel_where
         )
 
         sql = f"""
-        INSERT OR IGNORE INTO {cls._HANDLER.PERSONNEL_MAPPING_TABLE} (consumable_id, personnel_id, role)
+        INSERT OR IGNORE INTO {SQLiteDatabaseHelper.PERSONNEL_MAPPING_TABLE} (consumable_id, personnel_id, role)
             SELECT * FROM 
                 (
-                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
-                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                     {consumable_where_query}
                 )
                 CROSS JOIN
                 (
-                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Personnel])}.id as personnel_id
-                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[Personnel])}.id as personnel_id
+                    FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                     {personnel_where_query}
                 )
                 CROSS JOIN
@@ -233,48 +222,47 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
         return sql, (*consumable_values, *personnel_values, role)
 
-    @classmethod
     def _remove_personnel(
-        cls,
+        self,
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Set[str],
     ) -> None:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         _ = cur.execute(
-            *(cls._remove_personnel_sql(consumable_where, personnel_where, roles))
+            *(self._remove_personnel_sql(consumable_where, personnel_where, roles))
         )
 
-        cls._HANDLER.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
-    @classmethod
     def _remove_personnel_sql(
-        cls,
+        self,
         consumable_where: WhereMapping,
         personnel_where: WhereMapping,
         roles: Set[str],
     ) -> tuple[str, Sequence[SQLiteType]]:
-        consumable_where_query, consumable_values = cls._HANDLER.where_query(
+        consumable_where_query, consumable_values = SQLiteDatabaseHelper.where_query(
             consumable_where
         )
-        personnel_where_query, personnel_values = cls._HANDLER.where_query(
+        personnel_where_query, personnel_values = SQLiteDatabaseHelper.where_query(
             personnel_where
         )
         roles_list = list(roles)
 
         sql = f"""
-        DELETE FROM {cls._HANDLER.PERSONNEL_MAPPING_TABLE}
+        DELETE FROM {SQLiteDatabaseHelper.PERSONNEL_MAPPING_TABLE}
             WHERE consumable_id IN (
-                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Consumable])}.id as consumable_id
-                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[Consumable])}.id as consumable_id
+                    FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                     {consumable_where_query}
                 )
             AND personnel_id IN
                 (
-                    SELECT {to_shorthand(cls._HANDLER.TABLE_MAPPING[Personnel])}.id as personnel_id
-                    FROM {cls._HANDLER.MEGATABLE_QUERY}
+                    SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[Personnel])}.id as personnel_id
+                    FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                     {personnel_where_query}
                 )
             AND role IN ({placeholders(len(roles))})
@@ -282,8 +270,7 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
         return sql, [*consumable_values, *personnel_values, *roles_list]
 
-    @classmethod
-    def _change_tags(cls, ids: Sequence[Id], tags: Sequence[ApplyQuery[str]]) -> None:
+    def _change_tags(self, ids: Sequence[Id], tags: Sequence[ApplyQuery[str]]) -> None:
         if len(ids) == 0:
             return
 
@@ -303,25 +290,24 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
                         add_tags.remove(tag_query.value)
 
         if len(add_tags) > 0:
-            cls._add_tags(ids, add_tags)
+            self._add_tags(ids, add_tags)
         if len(remove_tags) > 0:
-            cls._remove_tags(ids, remove_tags)
+            self._remove_tags(ids, remove_tags)
 
-    @classmethod
-    def _add_tags(cls, ids: Sequence[Id], tags: Set[str]) -> None:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+    def _add_tags(self, ids: Sequence[Id], tags: Set[str]) -> None:
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
-        _ = cur.execute(*(cls._add_tags_sql(ids, list(tags))))
+        _ = cur.execute(*(self._add_tags_sql(ids, list(tags))))
 
-        cls._HANDLER.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
-    @classmethod
     def _add_tags_sql(
-        cls, ids: Sequence[Id], tags: Sequence[str]
+        self, ids: Sequence[Id], tags: Sequence[str]
     ) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
-        INSERT OR IGNORE INTO {cls._HANDLER.TAGS_MAPPING_TABLE} (consumable_id, tag)
+        INSERT OR IGNORE INTO {SQLiteDatabaseHelper.TAGS_MAPPING_TABLE} (consumable_id, tag)
             SELECT * FROM
                 (VALUES {placeholders(len(ids), "(?)")})
                 CROSS JOIN
@@ -330,21 +316,20 @@ class SQLiteConsumableHandler(ConsumableHandlerBase):
 
         return sql, list(ids) + list(tags)
 
-    @classmethod
-    def _remove_tags(cls, ids: Sequence[Id], tags: Set[str]) -> None:
-        cur = cls._HANDLER.PROVIDER().db.cursor()
+    def _remove_tags(self, ids: Sequence[Id], tags: Set[str]) -> None:
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
-        _ = cur.execute(*(cls._remove_tags_sql(ids, list(tags))))
+        _ = cur.execute(*(self._remove_tags_sql(ids, list(tags))))
 
-        cls._HANDLER.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
-    @classmethod
     def _remove_tags_sql(
-        cls, ids: Sequence[Id], tags: Sequence[str]
+        self, ids: Sequence[Id], tags: Sequence[str]
     ) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
-        DELETE FROM {cls._HANDLER.TAGS_MAPPING_TABLE}
+        DELETE FROM {SQLiteDatabaseHelper.TAGS_MAPPING_TABLE}
             WHERE consumable_id IN ({placeholders(len(ids))})
             AND tag IN ({placeholders(len(tags))})
         """

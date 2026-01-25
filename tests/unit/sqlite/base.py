@@ -2,30 +2,18 @@ import unittest
 from collections.abc import Mapping, Sequence
 from typing import Any, override
 
-from consumptionbackend.config import ConsumptionConfig
-from consumptionbackend.database.sqlite import SQLiteDatabaseHandler
+from consumptionbackend.database.sqlite.engine import SQLiteDatabaseEngine
 from consumptionbackend.database.sqlite.sql_utils import fix_value
-from tests.providers.config import MemoryConfigProvider
-from tests.providers.database.sqlite import SQLiteMemoryDatabaseProvider
+from consumptionbackend.utils import ServiceProvider
+from tests.services.database.sqlite import SQLiteMemoryDatabaseEngine
 
 
 class SQLiteUnitTestBase(unittest.TestCase):
     @override
     @classmethod
     def setUpClass(cls):
-        ConsumptionConfig._PROVIDER = (  # pyright:ignore[reportPrivateUsage]
-            MemoryConfigProvider()
-        )
-        _ = ConsumptionConfig()
-        SQLiteDatabaseHandler.PROVIDER = SQLiteMemoryDatabaseProvider
-        _ = SQLiteDatabaseHandler()
+        ServiceProvider.register(SQLiteDatabaseEngine, SQLiteMemoryDatabaseEngine())
         return super().setUpClass()
-
-    @override
-    @classmethod
-    def tearDownClass(cls):
-        ConsumptionConfig.reset()
-        return super().tearDownClass()
 
     @classmethod
     def normalise_sql(cls, sql: str) -> str:

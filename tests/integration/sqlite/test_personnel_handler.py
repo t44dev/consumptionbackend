@@ -4,18 +4,16 @@ from datetime import datetime
 
 from consumptionbackend.database import (
     ApplyQuery,
+    ConsumableService,
     PersonnelApplyMapping,
+    PersonnelService,
+    SeriesService,
     WhereMapping,
     WhereOperator,
     WhereQuery,
 )
-from consumptionbackend.database.sqlite import (
-    ConsumableHandler,
-    PersonnelHandler,
-    SeriesHandler,
-)
 from consumptionbackend.entities import Id
-from consumptionbackend.utils import NotFoundError
+from consumptionbackend.utils import NotFoundError, ServiceProvider
 from tests.test_data import CONSUMABLE_REQUIRED, PERSONNEL_REQUIRED
 
 from .base import SQLiteIntegrationTestBase
@@ -23,59 +21,65 @@ from .base import SQLiteIntegrationTestBase
 
 class TestPersonnelIntegration(SQLiteIntegrationTestBase):
     def test_new_simple(self):
-        id = PersonnelHandler.new(**PERSONNEL_REQUIRED)
-        personnel = PersonnelHandler.find_by_id(id)
+        service = ServiceProvider.get(PersonnelService)
+        id = service.new(**PERSONNEL_REQUIRED)
+        personnel = service.find_by_id(id)
 
         self.assertEqual(personnel.first_name, PERSONNEL_REQUIRED.get("first_name"))
         self.assertEqual(personnel.last_name, PERSONNEL_REQUIRED.get("last_name"))
         self.assertEqual(personnel.pseudonym, PERSONNEL_REQUIRED.get("pseudonym"))
 
     def test_find_by_id(self):
-        id = PersonnelHandler.new(**PERSONNEL_REQUIRED)
-        personnel = PersonnelHandler.find_by_id(id)
+        service = ServiceProvider.get(PersonnelService)
+        id = service.new(**PERSONNEL_REQUIRED)
+        personnel = service.find_by_id(id)
 
         self.assertEqual(personnel.first_name, PERSONNEL_REQUIRED.get("first_name"))
         self.assertEqual(personnel.last_name, PERSONNEL_REQUIRED.get("last_name"))
         self.assertEqual(personnel.pseudonym, PERSONNEL_REQUIRED.get("pseudonym"))
 
     def test_find_by_id_not_found(self):
+        service = ServiceProvider.get(PersonnelService)
         id = 44_444
 
         with self.assertRaises(NotFoundError):
-            _ = PersonnelHandler.find_by_id(id)
+            _ = service.find_by_id(id)
 
     def test_find_by_ids(self):
+        service = ServiceProvider.get(PersonnelService)
         ids: MutableSequence[Id] = []
         for _ in range(5):
-            ids.append(PersonnelHandler.new(**PERSONNEL_REQUIRED))
+            ids.append(service.new(**PERSONNEL_REQUIRED))
 
-        found_personnel = PersonnelHandler.find_by_ids(ids)
+        found_personnel = service.find_by_ids(ids)
 
         for i, personnel in enumerate(found_personnel):
             self.assertEqual(personnel.id, ids[i])
 
     def test_find_by_ids_not_found(self):
+        service = ServiceProvider.get(PersonnelService)
         ids = [44_444, 444_444, 4_444_444]
-        found_personnel = PersonnelHandler.find_by_ids(ids)
+        found_personnel = service.find_by_ids(ids)
 
         self.assertSequenceEqual(found_personnel, [])
 
     def test_find_simple(self):
-        personnel_id1 = PersonnelHandler.new(
+        service = ServiceProvider.get(PersonnelService)
+        personnel_id1 = service.new(
             **{
                 "first_name": "FoundPersonnel1",
                 "last_name": "lIkElAsTnAmE",
                 "pseudonym": "Pseudonym",
             }
         )
-        personnel_id2 = PersonnelHandler.new(
+        personnel_id2 = service.new(
             **{
                 "first_name": "FoundPersonnel2",
                 "last_name": "LiKeLaStNaMe",
                 "pseudonym": "Pseudonym",
             }
         )
-        _ = PersonnelHandler.new(
+        _ = service.new(
             **{
                 "first_name": "UnfoundPersonnel3",
                 "last_name": "LastName",
@@ -83,7 +87,7 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             }
         )
 
-        found_personnel = PersonnelHandler.find(
+        found_personnel = service.find(
             **{
                 "personnel": {
                     "last_name": [WhereQuery("likelastname", WhereOperator.LIKE)],
@@ -109,23 +113,28 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
         )
 
     def test_find_complex(self):
-        personnel_id1 = PersonnelHandler.new(
+        service, series_service, consumable_service = (
+            ServiceProvider.get(PersonnelService),
+            ServiceProvider.get(SeriesService),
+            ServiceProvider.get(ConsumableService),
+        )
+        personnel_id1 = service.new(
             **{**PERSONNEL_REQUIRED, "first_name": "FoundPersonnel1"}
         )
-        personnel_id2 = PersonnelHandler.new(
+        personnel_id2 = service.new(
             **{**PERSONNEL_REQUIRED, "first_name": "UnfoundPersonnel2"}
         )
 
-        series_id = SeriesHandler.new(**{"name": "FoundSeries1"})
+        series_id = series_service.new(**{"name": "FoundSeries1"})
 
-        consumable_id1 = ConsumableHandler.new(
+        consumable_id1 = consumable_service.new(
             **{
                 **CONSUMABLE_REQUIRED,
                 "series_id": series_id,
                 "end_date": datetime.fromtimestamp(44_444),
             }
         )
-        consumable_id2 = ConsumableHandler.new(
+        consumable_id2 = consumable_service.new(
             **{
                 **CONSUMABLE_REQUIRED,
                 "series_id": -1,
@@ -133,12 +142,12 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             }
         )
 
-        _ = ConsumableHandler.change_personnel(
+        _ = consumable_service.change_personnel(
             {"consumables": {"id": [WhereQuery(consumable_id1)]}},
             {"personnel": {"id": [WhereQuery(personnel_id1)]}},
             [ApplyQuery("Role")],
         )
-        _ = ConsumableHandler.change_personnel(
+        _ = consumable_service.change_personnel(
             {"consumables": {"id": [WhereQuery(consumable_id2)]}},
             {"personnel": {"id": [WhereQuery(personnel_id2)]}},
             [ApplyQuery("Role")],
@@ -157,7 +166,7 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             "series": {"name": [WhereQuery("FoundSeries1", WhereOperator.EQ)]},
         }
 
-        found_personnel = PersonnelHandler.find(**complex_where)
+        found_personnel = service.find(**complex_where)
 
         self.assertEqual(len(found_personnel), 1)
         personnel = found_personnel[0]
@@ -165,7 +174,8 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
         self.assertEqual(personnel.first_name, "FoundPersonnel1")
 
     def test_find_not_found(self):
-        _ = PersonnelHandler.new(**PERSONNEL_REQUIRED)
+        service = ServiceProvider.get(PersonnelService)
+        _ = service.new(**PERSONNEL_REQUIRED)
 
         where: WhereMapping = {
             "personnel": {
@@ -173,12 +183,13 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             }
         }
 
-        found_personnel = PersonnelHandler.find(**where)
+        found_personnel = service.find(**where)
 
         self.assertEqual(len(found_personnel), 0)
 
     def test_update(self):
-        id = PersonnelHandler.new(**PERSONNEL_REQUIRED)
+        service = ServiceProvider.get(PersonnelService)
+        id = service.new(**PERSONNEL_REQUIRED)
 
         where: WhereMapping = {"personnel": {"id": [WhereQuery(id)]}}
         apply: PersonnelApplyMapping = {
@@ -186,16 +197,17 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             "pseudonym": ApplyQuery("UpdatedPseudonym"),
         }
 
-        updated_personnel = PersonnelHandler.update(where, apply)
+        updated_personnel = service.update(where, apply)
 
         self.assertEqual(len(updated_personnel), 1)
-        personnel = PersonnelHandler.find_by_id(updated_personnel[0])
+        personnel = service.find_by_id(updated_personnel[0])
         self.assertEqual(personnel.id, id)
         self.assertEqual(personnel.first_name, "UpdatedFirstName")
         self.assertEqual(personnel.pseudonym, "UpdatedPseudonym")
 
     def test_update_not_found(self):
-        _ = PersonnelHandler.new(**PERSONNEL_REQUIRED)
+        service = ServiceProvider.get(PersonnelService)
+        _ = service.new(**PERSONNEL_REQUIRED)
 
         where: WhereMapping = {
             "personnel": {
@@ -204,26 +216,27 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
         }
         apply: PersonnelApplyMapping = {"first_name": ApplyQuery("UpdatedFirstName")}
 
-        updated_personnel = PersonnelHandler.update(where, apply)
+        updated_personnel = service.update(where, apply)
 
         self.assertEqual(len(updated_personnel), 0)
 
     def test_delete(self):
-        _ = PersonnelHandler.new(
+        service = ServiceProvider.get(PersonnelService)
+        _ = service.new(
             **{
                 **PERSONNEL_REQUIRED,
                 "first_name": "SharedFirstName",
                 "last_name": "DeletePersonnel1",
             }
         )
-        _ = PersonnelHandler.new(
+        _ = service.new(
             **{
                 **PERSONNEL_REQUIRED,
                 "first_name": "SharedFirstName",
                 "last_name": "DeletePersonnel2",
             }
         )
-        _ = PersonnelHandler.new(
+        _ = service.new(
             **{
                 **PERSONNEL_REQUIRED,
                 "first_name": "SharedFirstName",
@@ -231,7 +244,7 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
             }
         )
 
-        deleted_personnel_count = PersonnelHandler.delete(
+        deleted_personnel_count = service.delete(
             **{
                 "personnel": {
                     "first_name": [WhereQuery("SharedFirstName", WhereOperator.EQ)],
@@ -243,9 +256,10 @@ class TestPersonnelIntegration(SQLiteIntegrationTestBase):
         self.assertEqual(deleted_personnel_count, 2)
 
     def test_delete_not_found(self):
-        _ = PersonnelHandler.new(**PERSONNEL_REQUIRED)
+        service = ServiceProvider.get(PersonnelService)
+        _ = service.new(**PERSONNEL_REQUIRED)
 
-        deleted_personnel_count = SeriesHandler.delete(
+        deleted_personnel_count = service.delete(
             **{
                 "personnel": {
                     "first_name": [WhereQuery("UnfoundPersonnel", WhereOperator.LIKE)]

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .EntityBase import EntityBase
+from .base import EntityBase
 
 
 @dataclass

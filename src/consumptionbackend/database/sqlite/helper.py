@@ -8,11 +8,11 @@ from consumptionbackend.database import (
     WhereOperator,
     WhereQuery,
 )
+from consumptionbackend.database.sqlite.engine import SQLiteDatabaseEngine
 from consumptionbackend.entities import Consumable, EntityBase, Id, Personnel, Series
-from consumptionbackend.utils import NotFoundError
+from consumptionbackend.utils import NotFoundError, ServiceProvider
 from consumptionbackend.utils.exceptions import NoValuesError
 
-from .database_provider import SQLiteDatabaseProviderBase, SQLiteFileDatabaseProvider
 from .sql_utils import (
     SQLiteType,
     fix_value,
@@ -23,10 +23,9 @@ from .sql_utils import (
 )
 
 
+# TODO: Probably some more idiomatic way to do this with inheritance
 @final
-class SQLiteDatabaseHandler:
-    PROVIDER: type[SQLiteDatabaseProviderBase] = SQLiteFileDatabaseProvider
-
+class SQLiteDatabaseHelper:
     TABLE_MAPPING = {
         EntityBase: "no_table",
         Consumable: "consumables",
@@ -53,14 +52,15 @@ class SQLiteDatabaseHandler:
         if len(values) == 0:
             raise NoValuesError(f"No values provided on creation of {t.__name__}.")
 
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         id = cur.execute(*(cls._new_sql(t, **values))).lastrowid
 
         if id is None:
             raise RuntimeError("No row id after insertion.")
 
-        cls.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
         return id
@@ -69,7 +69,7 @@ class SQLiteDatabaseHandler:
     def _new_sql[E: EntityBase](
         cls, t: type[E], **values: Any
     ) -> tuple[str, Sequence[SQLiteType]]:
-        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+        table = SQLiteDatabaseHelper.TABLE_MAPPING[t]
 
         new_values: Sequence[SQLiteType] = []
 
@@ -86,7 +86,8 @@ class SQLiteDatabaseHandler:
 
     @classmethod
     def find_by_id[E: EntityBase](cls, t: type[E], id: Id) -> E:
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         result: sqlite3.Row | None = cur.execute(
             *(cls._find_by_id_sql(t, id))
@@ -103,13 +104,14 @@ class SQLiteDatabaseHandler:
     def _find_by_id_sql[E: EntityBase](
         cls, t: type[E], id: Id
     ) -> tuple[str, Sequence[SQLiteType]]:
-        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+        table = SQLiteDatabaseHelper.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id = ?", [id]
 
     @classmethod
     def find_by_ids[E: EntityBase](cls, t: type[E], id: Sequence[Id]) -> Sequence[E]:
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._find_by_ids_sql(t, id))
@@ -123,7 +125,7 @@ class SQLiteDatabaseHandler:
     def _find_by_ids_sql[E: EntityBase](
         cls, t: type[E], ids: Sequence[Id]
     ) -> tuple[str, Sequence[SQLiteType]]:
-        table = SQLiteDatabaseHandler.TABLE_MAPPING[t]
+        table = SQLiteDatabaseHelper.TABLE_MAPPING[t]
 
         return f"SELECT * FROM {table} WHERE id IN ({placeholders(len(ids))})", [*ids]
 
@@ -131,7 +133,8 @@ class SQLiteDatabaseHandler:
     def find[E: EntityBase](
         cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> Sequence[E]:
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._find_sql(t, **where))
@@ -146,11 +149,11 @@ class SQLiteDatabaseHandler:
     def _find_sql[E: EntityBase](
         cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, Sequence[SQLiteType]]:
-        where_query, values = SQLiteDatabaseHandler.where_query(where)
+        where_query, values = SQLiteDatabaseHelper.where_query(where)
 
         sql = f"""
-        SELECT DISTINCT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.* 
-            FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+        SELECT DISTINCT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[t])}.* 
+            FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
             {where_query}
         """
 
@@ -166,13 +169,14 @@ class SQLiteDatabaseHandler:
         if len(apply) == 0:
             return [e.id for e in cls.find(t, **where)]
 
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._update_sql(t, where, apply))
         ).fetchall()
 
-        cls.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
         return [row["id"] for row in results]
@@ -184,15 +188,15 @@ class SQLiteDatabaseHandler:
         where: WhereMapping,
         apply: Any,
     ) -> tuple[str, Sequence[SQLiteType]]:
-        where_query, where_values = SQLiteDatabaseHandler.where_query(where)
-        apply_query, apply_values = SQLiteDatabaseHandler.apply_query(apply)
+        where_query, where_values = SQLiteDatabaseHelper.where_query(where)
+        apply_query, apply_values = SQLiteDatabaseHelper.apply_query(apply)
 
         sql = f"""
-        UPDATE {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
+        UPDATE {SQLiteDatabaseHelper.TABLE_MAPPING[t]}
             SET {apply_query}
             WHERE id IN (
-                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
-                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[t])}.id 
+                FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                 {where_query}
             )
         RETURNING id
@@ -202,13 +206,14 @@ class SQLiteDatabaseHandler:
 
     @classmethod
     def delete[E: EntityBase](cls, t: type[E], **where: Unpack[WhereMapping]) -> int:
-        cur = cls.PROVIDER().db.cursor()
+        db = ServiceProvider.get(SQLiteDatabaseEngine).db
+        cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
             *(cls._delete_sql(t, **where))
         ).fetchall()
 
-        cls.PROVIDER().db.commit()
+        db.commit()
         cur.close()
 
         return len(results)
@@ -217,13 +222,13 @@ class SQLiteDatabaseHandler:
     def _delete_sql[E: EntityBase](
         cls, t: type[E], **where: Unpack[WhereMapping]
     ) -> tuple[str, Sequence[SQLiteType]]:
-        where_query, values = SQLiteDatabaseHandler.where_query(where)
+        where_query, values = SQLiteDatabaseHelper.where_query(where)
 
         sql = f"""
-        DELETE FROM {SQLiteDatabaseHandler.TABLE_MAPPING[t]}
+        DELETE FROM {SQLiteDatabaseHelper.TABLE_MAPPING[t]}
             WHERE id IN (
-                SELECT {to_shorthand(SQLiteDatabaseHandler.TABLE_MAPPING[t])}.id 
-                FROM {SQLiteDatabaseHandler.MEGATABLE_QUERY}
+                SELECT {to_shorthand(SQLiteDatabaseHelper.TABLE_MAPPING[t])}.id 
+                FROM {SQLiteDatabaseHelper.MEGATABLE_QUERY}
                 {where_query}
             )
         RETURNING id
@@ -244,7 +249,7 @@ class SQLiteDatabaseHandler:
 
                 queries: Sequence[WhereQuery[Any]] = mapping[column]
                 shorthand_table_name = (
-                    to_shorthand(SQLiteDatabaseHandler.PERSONNEL_MAPPING_TABLE)
+                    to_shorthand(SQLiteDatabaseHelper.PERSONNEL_MAPPING_TABLE)
                     if column == "role"
                     else to_shorthand(table_name)
                 )

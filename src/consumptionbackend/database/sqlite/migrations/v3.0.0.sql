@@ -1,4 +1,16 @@
 BEGIN TRANSACTION;
+-- Versioning
+CREATE table version (
+    major INTEGER,
+    minor INTEGER,
+    patch INTEGER
+);
+
+INSERT INTO 
+    version (major, minor, patch)
+VALUES
+    (3, 0, 0);
+
 -- Setup Main Tables
 -- Series
 CREATE TABLE series (

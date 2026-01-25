@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from .EntityBase import EntityBase
-from .Status import Status
+from .base import EntityBase
+from .status import Status
 from .types import Id
 
 

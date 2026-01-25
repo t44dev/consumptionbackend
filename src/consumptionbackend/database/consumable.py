@@ -8,31 +8,27 @@ from consumptionbackend.entities import (
     IdRoles,
     Series,
 )
+from consumptionbackend.utils import ServiceBase
 
-from .database_handling import DatabaseHandlerBase
+from .base import EntityServiceBase
 from .fields import ConsumableFieldsRequired, WhereMapping
 from .queries import ApplyQuery
 
 
-class ConsumableHandlerBase(DatabaseHandlerBase[Consumable], ABC):
+class ConsumableService(EntityServiceBase[Consumable], ServiceBase, ABC):
     @override
-    @classmethod
     @abstractmethod
     def new(cls, **values: Unpack[ConsumableFieldsRequired]) -> Id: ...
 
-    @classmethod
     @abstractmethod
     def series(cls, id: Id) -> Series: ...
 
-    @classmethod
     @abstractmethod
     def personnel(cls, consumable_id: Id) -> Sequence[IdRoles]: ...
 
-    @classmethod
     @abstractmethod
     def tags(cls, consumable_id: Id) -> Sequence[str]: ...
 
-    @classmethod
     @abstractmethod
     def change_personnel(
         cls,

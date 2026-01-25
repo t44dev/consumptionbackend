@@ -1,16 +1,16 @@
 import unittest
 
-from consumptionbackend.database.sqlite.SeriesHandler import SQLiteSeriesHandler
+from consumptionbackend.database.sqlite import SQLiteSeriesService
 
 from .base import SQLiteUnitTestBase
 
 
-class TestSQLiteSeriesHandler(SQLiteUnitTestBase):
+class TestSQLiteSeriesService(SQLiteUnitTestBase):
     def test_consumables_simple(self):
         series_id = 44
         expected_sql = "SELECT * FROM consumables WHERE series_id = ?"
 
-        (sql, values) = SQLiteSeriesHandler._consumables_sql(  # pyright: ignore[reportPrivateUsage]
+        (sql, values) = SQLiteSeriesService()._consumables_sql(  # pyright: ignore[reportPrivateUsage]
             series_id
         )
 

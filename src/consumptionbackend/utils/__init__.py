@@ -1,4 +1,4 @@
 from .exceptions import NotFoundError, ValidationError
-from .utils import AbstractSingleton, Singleton
+from .services import ServiceBase, ServiceProvider
 
-__all__ = ["Singleton", "AbstractSingleton", "NotFoundError", "ValidationError"]
+__all__ = ["ServiceBase", "ServiceProvider", "NotFoundError", "ValidationError"]

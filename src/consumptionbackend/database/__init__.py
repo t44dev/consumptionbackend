@@ -1,5 +1,5 @@
-from .ConsumableHandler import ConsumableHandlerBase
-from .database_handling import DatabaseHandlerBase
+from .base import EntityServiceBase
+from .consumable import ConsumableService
 from .fields import (
     ConsumableApplyMapping,
     ConsumableFieldsRequired,
@@ -15,15 +15,15 @@ from .fields import (
     personnel_required_to_where,
     series_required_to_where,
 )
-from .PersonnelHandler import PersonnelHandlerBase
+from .personnel import PersonnelService
 from .queries import ApplyOperator, ApplyQuery, WhereOperator, WhereQuery
-from .SeriesHandler import SeriesHandlerBase
+from .series import SeriesService
 
 __all__ = [
-    "ConsumableHandlerBase",
-    "PersonnelHandlerBase",
-    "SeriesHandlerBase",
-    "DatabaseHandlerBase",
+    "ConsumableService",
+    "PersonnelService",
+    "SeriesService",
+    "EntityServiceBase",
     "WhereMapping",
     "ConsumableFieldsRequired",
     "ConsumableApplyMapping",
