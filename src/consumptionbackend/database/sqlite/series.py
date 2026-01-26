@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from collections.abc import Sequence
 from typing import Unpack, final, override
@@ -14,6 +15,8 @@ from consumptionbackend.utils import ServiceProvider
 
 from .helper import SQLiteDatabaseHelper
 from .sql_utils import SQLiteType
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -47,17 +50,25 @@ class SQLiteSeriesService(SeriesService):
         return SQLiteDatabaseHelper.delete(Series, **where)
 
     @override
-    def consumables(self, id: Id) -> Sequence[Consumable]:
+    def consumables(self, series_id: Id) -> Sequence[Consumable]:
         db = ServiceProvider.get(SQLiteDatabaseEngine).db
         cur = db.cursor()
 
         results: Sequence[sqlite3.Row] = cur.execute(
-            *(self._consumables_sql(id))
+            *(self._consumables_sql(series_id))
         ).fetchall()
 
         cur.close()
 
-        return [Consumable(**args) for args in results]
+        consumables = [Consumable(**args) for args in results]
+        logger.info(
+            "Found Consumables for Series id",
+            extra={
+                "data": {"id": series_id, "results": consumables},
+            },
+        )
+
+        return consumables
 
     def _consumables_sql(self, id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""

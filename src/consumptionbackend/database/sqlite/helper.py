@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from collections.abc import Mapping, MutableSequence, Sequence
 from typing import Any, Unpack, final
@@ -21,6 +22,8 @@ from .sql_utils import (
     to_sqlite_operator,
     validate_column_name,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Probably some more idiomatic way to do this with inheritance
@@ -56,6 +59,10 @@ class SQLiteDatabaseHelper:
         cur = db.cursor()
 
         id = cur.execute(*(cls._new_sql(t, **values))).lastrowid
+        logger.info(
+            "Created Entity",
+            extra={"data": {"new": values, "entity": t.__name__, "id": id}},
+        )
 
         if id is None:
             raise RuntimeError("No row id after insertion.")
@@ -98,7 +105,13 @@ class SQLiteDatabaseHelper:
 
         cur.close()
 
-        return t(**result)
+        entity = t(**result)
+        logger.info(
+            "Found Entity by id",
+            extra={"data": {"id": id, "entity": t.__name__, "result": entity}},
+        )
+
+        return entity
 
     @classmethod
     def _find_by_id_sql[E: EntityBase](
@@ -119,7 +132,15 @@ class SQLiteDatabaseHelper:
 
         cur.close()
 
-        return [t(**result) for result in results]
+        entities = [t(**result) for result in results]
+        logger.info(
+            "Found Entities by ids",
+            extra={
+                "data": {"ids": id, "entity": t.__name__, "results": entities},
+            },
+        )
+
+        return entities
 
     @classmethod
     def _find_by_ids_sql[E: EntityBase](
@@ -143,7 +164,15 @@ class SQLiteDatabaseHelper:
         cur.close()
 
         # TODO: Improve filtering of NONE row
-        return [t(**result) for result in results if result["id"] is not None]
+        entities = [t(**result) for result in results if result["id"] is not None]
+        logger.info(
+            "Found Entities",
+            extra={
+                "data": {"query": where, "entity": t.__name__, "results": entities},
+            },
+        )
+
+        return entities
 
     @classmethod
     def _find_sql[E: EntityBase](
@@ -179,7 +208,20 @@ class SQLiteDatabaseHelper:
         db.commit()
         cur.close()
 
-        return [row["id"] for row in results]
+        ids = [row["id"] for row in results]
+        logger.info(
+            "Updated Entities",
+            extra={
+                "data": {
+                    "query": where,
+                    "apply": apply,
+                    "entity": t.__name__,
+                    "results": ids,
+                },
+            },
+        )
+
+        return ids
 
     @classmethod
     def _update_sql[E: EntityBase](
@@ -216,7 +258,15 @@ class SQLiteDatabaseHelper:
         db.commit()
         cur.close()
 
-        return len(results)
+        deleted = len(results)
+        logger.info(
+            "Deleted Entities",
+            extra={
+                "data": {"query": where, "entity": t.__name__, "deleted": deleted},
+            },
+        )
+
+        return deleted
 
     @classmethod
     def _delete_sql[E: EntityBase](

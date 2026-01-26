@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from collections import defaultdict
 from collections.abc import MutableMapping, MutableSequence, MutableSet, Sequence, Set
@@ -22,6 +23,8 @@ from consumptionbackend.utils import ServiceProvider
 
 from .helper import SQLiteDatabaseHelper
 from .sql_utils import SQLiteType, placeholders, to_shorthand
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -68,14 +71,23 @@ class SQLiteConsumableService(ConsumableService):
         return SQLiteDatabaseHelper.delete(Consumable, **where)
 
     @override
-    def series(self, id: Id) -> Series:
+    def series(self, consumable_id: Id) -> Series:
         db = ServiceProvider.get(SQLiteDatabaseEngine).db
         cur = db.cursor()
 
-        result: sqlite3.Row = cur.execute(*(self._series_sql(id))).fetchone()
+        result: sqlite3.Row = cur.execute(*(self._series_sql(consumable_id))).fetchone()
 
         cur.close()
-        return Series(**result)
+
+        series = Series(**result)
+        logger.info(
+            "Found Series for Consumable id",
+            extra={
+                "data": {"id": consumable_id, "result": series},
+            },
+        )
+
+        return series
 
     def _series_sql(self, id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
@@ -106,7 +118,16 @@ class SQLiteConsumableService(ConsumableService):
             p_id = row["id"]
             role = row["role"]
             mapping[p_id].append(role)
-        return [IdRoles(p_id, mapping[p_id]) for p_id in mapping]
+
+        id_roles = [IdRoles(p_id, mapping[p_id]) for p_id in mapping]
+        logger.info(
+            "Found Personnel for Consumable id",
+            extra={
+                "data": {"id": consumable_id, "results": id_roles},
+            },
+        )
+
+        return id_roles
 
     def _personnel_sql(self, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
@@ -128,7 +149,13 @@ class SQLiteConsumableService(ConsumableService):
 
         cur.close()
 
-        return [row["tag"] for row in results]
+        tags = [row["tag"] for row in results]
+        logger.info(
+            "Found tags for Consumable id",
+            extra={"data": {"id": consumable_id, "results": tags}},
+        )
+
+        return tags
 
     def _tags_sql(self, consumable_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
@@ -149,6 +176,9 @@ class SQLiteConsumableService(ConsumableService):
         add_roles: MutableSet[str] = set()
         remove_roles: MutableSet[str] = set()
 
+        # TODO: Avoid using find
+        consumables = [c.id for c in self.find(**consumable_where)]
+
         for role_query in roles:
             match role_query.operator:
                 case ApplyOperator.APPLY | ApplyOperator.ADD:
@@ -166,9 +196,19 @@ class SQLiteConsumableService(ConsumableService):
         if len(remove_roles) > 0:
             self._remove_personnel(consumable_where, personnel_where, remove_roles)
 
-        # TODO: Avoid using find
-        consumables = self.find(**consumable_where)
-        return [c.id for c in consumables]
+        logger.info(
+            "Changed Personnel for Consumable(s)",
+            extra={
+                "data": {
+                    "consumable_query": consumable_where,
+                    "personnel_query": personnel_where,
+                    "roles": roles,
+                    "updated_consumable_ids": consumables,
+                }
+            },
+        )
+
+        return consumables
 
     def _add_personnel(
         self,
@@ -293,6 +333,11 @@ class SQLiteConsumableService(ConsumableService):
             self._add_tags(ids, add_tags)
         if len(remove_tags) > 0:
             self._remove_tags(ids, remove_tags)
+
+        logger.info(
+            "Changed tags for Consumable ids",
+            extra={"data": {"ids": ids, "tags": tags}},
+        )
 
     def _add_tags(self, ids: Sequence[Id], tags: Set[str]) -> None:
         db = ServiceProvider.get(SQLiteDatabaseEngine).db

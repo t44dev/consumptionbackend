@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from collections import defaultdict
 from collections.abc import MutableMapping, MutableSequence, Sequence
@@ -15,6 +16,8 @@ from consumptionbackend.utils import ServiceProvider
 
 from .helper import SQLiteDatabaseHelper
 from .sql_utils import SQLiteType
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -63,7 +66,16 @@ class SQLitePersonnelService(PersonnelService):
             c_id = row["id"]
             role = row["role"]
             mapping[c_id].append(role)
-        return [IdRoles(c_id, mapping[c_id]) for c_id in mapping]
+
+        id_roles = [IdRoles(c_id, mapping[c_id]) for c_id in mapping]
+        logger.info(
+            "Found Consumables for Personnel id",
+            extra={
+                "data": {"id": personnel_id, "results": id_roles},
+            },
+        )
+
+        return id_roles
 
     def _consumables_sql(self, personnel_id: Id) -> tuple[str, Sequence[SQLiteType]]:
         sql = f"""
