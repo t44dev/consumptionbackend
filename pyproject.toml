@@ -1,6 +1,6 @@
 [project]
 name = "consumptionbackend"
-version = "3.0.0"
+version = "3.0.1"
 authors = [
   { name="track44", email="trackfortyfour@proton.me" },
 ]
