@@ -2,7 +2,7 @@
 name = "consumptionbackend"
 version = "3.0.0"
 authors = [
-  { name="track-44", email="trackfortyfour@proton.me" },
+  { name="track44", email="trackfortyfour@proton.me" },
 ]
 description = "The backend (SQLite) database manager for the ConsumptionCLI tool."
 readme = "README.md"
