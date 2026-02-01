@@ -4,7 +4,9 @@ from consumptionbackend.database import (
     ConsumableService,
     PersonnelService,
     SeriesService,
+    TagService,
 )
+from consumptionbackend.database.sqlite.tag import SQLiteTagService
 from consumptionbackend.utils import ServiceProvider
 
 from .consumable import SQLiteConsumableService
@@ -19,3 +21,4 @@ def register_sqlite_services(db_path: Path):
     ServiceProvider.register(ConsumableService, SQLiteConsumableService())
     ServiceProvider.register(SeriesService, SQLiteSeriesService())
     ServiceProvider.register(PersonnelService, SQLitePersonnelService())
+    ServiceProvider.register(TagService, SQLiteTagService())
