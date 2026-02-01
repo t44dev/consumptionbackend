@@ -6,11 +6,13 @@ from consumptionbackend.database import (
     ConsumableService,
     PersonnelService,
     SeriesService,
+    TagService,
 )
 from consumptionbackend.database.sqlite import (
     SQLiteConsumableService,
     SQLitePersonnelService,
     SQLiteSeriesService,
+    SQLiteTagService,
 )
 from consumptionbackend.database.sqlite.engine import SQLiteDatabaseEngine
 from consumptionbackend.utils import ServiceProvider
@@ -28,6 +30,7 @@ class SQLiteIntegrationTestBase(unittest.TestCase):
         ServiceProvider.register(ConsumableService, SQLiteConsumableService())
         ServiceProvider.register(SeriesService, SQLiteSeriesService())
         ServiceProvider.register(PersonnelService, SQLitePersonnelService())
+        ServiceProvider.register(TagService, SQLiteTagService())
         return super().setUpClass()
 
     @override
