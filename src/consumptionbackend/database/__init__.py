@@ -18,11 +18,13 @@ from .fields import (
 from .personnel import PersonnelService
 from .queries import ApplyOperator, ApplyQuery, WhereOperator, WhereQuery
 from .series import SeriesService
+from .tag import TagService
 
 __all__ = [
     "ConsumableService",
     "PersonnelService",
     "SeriesService",
+    "TagService",
     "EntityServiceBase",
     "WhereMapping",
     "ConsumableFieldsRequired",
